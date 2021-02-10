@@ -161,10 +161,7 @@ export class ApolloClientManager {
     };
   };
 
-  resetPasswordRequest = async (
-    email: string,
-    redirectUrl: string
-  ) => {
+  resetPasswordRequest = async (email: string, redirectUrl: string) => {
     const { data, errors } = await this.client.mutate<
       ResetPasswordRequest,
       ResetPasswordRequestVariables

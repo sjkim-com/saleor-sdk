@@ -17,19 +17,17 @@ export type WatchMapFn<T extends QueryShape, TResult> = (
 
 export type InferOptions<T> = T extends (_: any, o: infer O) => any ? O : never;
 
-export type QueryData<T extends (...args: any) => any> = ReturnType<
-  T
-> extends Promise<infer R>
+export type QueryData<
+  T extends (...args: any) => any
+> = ReturnType<T> extends Promise<infer R>
   ? R extends { [key: string]: any }
     ? R["data"]
     : null
   : never;
 
-export type WatchQueryData<T extends (...args: any) => any> = ReturnType<
-  T
-> extends ObservableQuery<infer R>
-  ? R
-  : never;
+export type WatchQueryData<
+  T extends (...args: any) => any
+> = ReturnType<T> extends ObservableQuery<infer R> ? R : never;
 
 export type ApolloConfigOptions = Omit<
   ApolloClientOptions<any>,
@@ -77,4 +75,13 @@ export interface ApolloConfigInput {
    * The rest of Apollo client options, which might be passed to it during its initialization.
    */
   options?: ApolloConfigOptions;
+  /**
+   * Custom Apollo client to be used by Saleor API. By default client is created automatically with default custom cache and links.
+   * If you pass custom client, custom cache and links passed in this config will not be used, you must pass them to client oneself.
+   */
+  client2?: ApolloClient<any>;
+  /**
+   * Custom list of links to be used by Apollo client. By default preconfigured links are created automatically.
+   */
+  links2?: ApolloLink[];
 }

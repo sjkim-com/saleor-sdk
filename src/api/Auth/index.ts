@@ -157,7 +157,10 @@ export class AuthAPI extends ErrorListener {
     );
 
     if (dataError?.error) {
-      this.fireError(dataError.error, DataErrorAuthTypes.RESET_PASSWORD_REQUEST);
+      this.fireError(
+        dataError.error,
+        DataErrorAuthTypes.RESET_PASSWORD_REQUEST
+      );
     }
 
     if (dataError) {
