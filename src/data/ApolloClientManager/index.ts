@@ -93,6 +93,15 @@ import {
   RefreshSignInTokenInput,
 } from "./types";
 
+// CMGT用
+import * as CmgtQueries from "../../queries/cmgt";
+import {
+  CmgtCheckoutProductVariants,
+  CmgtCheckoutProductVariants_pms_saleproduct_connection,
+} from "../../queries/gqlTypes/CmgtCheckoutProductVariants";
+
+import { createCheckoutProductVariantsResponse } from "./scripts/convert";
+
 export class ApolloClientManager {
   private client: ApolloClient<any>;
 
@@ -425,6 +434,124 @@ export class ApolloClientManager {
 
           return {
             id: existingLine?.id,
+            quantity: existingLine?.quantity || 0,
+            totalPrice,
+            variant: {
+              attributes: edge.node.attributes,
+              id: edge.node.id,
+              name: edge.node.name,
+              pricing: edge.node.pricing,
+              product: edge.node.product,
+              quantityAvailable: edge.node.quantityAvailable,
+              sku: edge.node.sku,
+            },
+          };
+        })
+      : [];
+
+    const linesWithProperVariantUpdated = linesWithProperVariant.map(line => {
+      const variantPricing = line.variant.pricing?.price;
+      const totalPrice = variantPricing
+        ? {
+            gross: {
+              ...variantPricing.gross,
+              amount: variantPricing.gross.amount * line.quantity,
+            },
+            net: {
+              ...variantPricing.net,
+              amount: variantPricing.net.amount * line.quantity,
+            },
+          }
+        : null;
+
+      return {
+        id: line.id,
+        quantity: line.quantity,
+        totalPrice,
+        variant: line.variant,
+      };
+    });
+
+    return {
+      data: [
+        ...linesWithMissingVariantUpdated,
+        ...linesWithProperVariantUpdated,
+      ],
+    };
+  };
+
+  // CMGT用
+  cmgtGetRefreshedCheckoutLines = async (
+    checkoutlines: ICheckoutModelLine[] | null
+  ) => {
+    const idsOfMissingVariants = checkoutlines
+      ?.filter(line => !line.variant || !line.totalPrice)
+      .map(line => line.variant.id);
+    const linesWithProperVariant =
+      checkoutlines?.filter(line => line.variant && line.totalPrice) || [];
+
+    let cmgtVariants:
+      | CmgtCheckoutProductVariants_pms_saleproduct_connection
+      | null
+      | undefined;
+
+    if (idsOfMissingVariants && idsOfMissingVariants.length) {
+      try {
+        const observable = this.client.watchQuery<
+          CmgtCheckoutProductVariants,
+          any
+        >({
+          query: CmgtQueries.cmgtCheckoutProductVariants,
+          variables: {
+            ids: idsOfMissingVariants,
+          },
+        });
+        cmgtVariants = await new Promise((resolve, reject) => {
+          observable.subscribe(
+            result => {
+              const { data, errors } = result;
+              if (errors?.length) {
+                reject(errors);
+              } else {
+                resolve(data.pms_saleproduct_connection);
+              }
+            },
+            error => {
+              reject(error);
+            }
+          );
+        });
+      } catch (error) {
+        return {
+          error,
+        };
+      }
+    }
+
+    const variants = createCheckoutProductVariantsResponse(cmgtVariants);
+    const linesWithMissingVariantUpdated = variants
+      ? variants[0].edges.map(edge => {
+          const existingLine = checkoutlines?.find(
+            line => line.variant.id === edge.node.sku
+          );
+          const variantPricing = edge.node.pricing?.price;
+          const totalPrice = variantPricing
+            ? {
+                gross: {
+                  ...variantPricing.gross,
+                  amount:
+                    variantPricing.gross.amount * (existingLine?.quantity || 0),
+                },
+                net: {
+                  ...variantPricing.net,
+                  amount:
+                    variantPricing.net.amount * (existingLine?.quantity || 0),
+                },
+              }
+            : null;
+
+          return {
+            id: existingLine?.variant.id,
             quantity: existingLine?.quantity || 0,
             totalPrice,
             variant: {
