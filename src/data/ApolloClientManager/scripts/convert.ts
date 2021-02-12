@@ -1,13 +1,8 @@
-/* eslint-disable guard-for-in */
-/* eslint-disable no-restricted-syntax */
 /* eslint-disable prettier/prettier */
 
 import {
-  // CmgtCheckoutProductVariants,
   CmgtCheckoutProductVariants_pms_saleproduct_connection,
-  // CmgtCheckoutProductVariants_pms_saleproduct_connection_edges,
   CmgtCheckoutProductVariants_pms_saleproduct_connection_edges_node,
-  // CmgtCheckoutProductVariants_pms_saleproduct_connection,
 } from "../../../queries/gqlTypes/CmgtCheckoutProductVariants";
 
 import {
@@ -28,8 +23,6 @@ import {
   CheckoutProductVariants_productVariants_edges_node,
   CheckoutProductVariants_productVariants_edges,
   CheckoutProductVariants_productVariants,
-  // CheckoutProductVariants,
-  // CheckoutProductVariantsVariables,
 } from "../../../queries/gqlTypes/CheckoutProductVariants";
 
 export const createCheckoutProductVariantsResponse = (
@@ -38,15 +31,9 @@ export const createCheckoutProductVariantsResponse = (
     | null
     | undefined
 ) => {
-  console.log("<Product : scripts> createProductDetailsResponse");
-  console.log("----- CmgtCheckoutProductVariants -----");
-  console.log(CmgtCheckoutProductVariants);
-
   const result = CmgtCheckoutProductVariants?.edges.map(edge => {
     const saleProduct: CmgtCheckoutProductVariants_pms_saleproduct_connection_edges_node =
       edge.node;
-
-    // const pmsProductImages = saleProduct.pms_product?.pms_productimgs;
 
     const currencyCode = "JPY";
     const productPriceGross = saleProduct.pms_product?.sale_price;
