@@ -49,7 +49,8 @@ export function setupRecording() {
 
 export async function setupAPI() {
   const cache = await createSaleorCache({ persistCache: true });
-  const apiUrl = process.env.API_URL || "http://localhost:8000/graphql/";
+  const apiUrl =
+    process.env.Core || "https://frontdemo12.herokuapp.com/graphql/";
   const invalidTokenLink = invalidTokenLinkWithTokenHandler(() => null);
   const links = [
     invalidTokenLink,

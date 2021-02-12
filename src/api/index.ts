@@ -38,6 +38,7 @@ export class SaleorAPI {
 
   constructor(
     client: ApolloClient<any>,
+    client2: ApolloClient<any>,
     apiProxy: APIProxy,
     config: Config,
     onStateUpdate?: () => any
@@ -46,15 +47,26 @@ export class SaleorAPI {
 
     const localStorageHandler = new LocalStorageHandler();
     const apolloClientManager = new ApolloClientManager(client);
+    const apolloClientManager2 = new ApolloClientManager(client2);
     const jobsManager = new JobsManager(
       localStorageHandler,
       apolloClientManager
+    );
+    const jobsManager2 = new JobsManager(
+      localStorageHandler,
+      apolloClientManager2
     );
     const saleorState = new SaleorState(
       config,
       localStorageHandler,
       apolloClientManager,
       jobsManager
+    );
+    const saleorState2 = new SaleorState(
+      config,
+      localStorageHandler,
+      apolloClientManager2,
+      jobsManager2
     );
     const localStorageManager = new LocalStorageManager(
       localStorageHandler,
@@ -63,9 +75,10 @@ export class SaleorAPI {
 
     if (onStateUpdate) {
       saleorState.subscribeToNotifiedChanges(onStateUpdate);
+      saleorState2.subscribeToNotifiedChanges(onStateUpdate);
     }
 
-    this.auth = new AuthAPI(saleorState, jobsManager, config);
+    this.auth = new AuthAPI(saleorState2, jobsManager, config);
     this.checkout = new SaleorCheckoutAPI(saleorState, jobsManager, config);
     this.cart = new SaleorCartAPI(
       localStorageManager,

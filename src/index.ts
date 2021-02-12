@@ -88,7 +88,15 @@ export class SaleorManager {
     tokenExpirationCallback: () => void,
     onSaleorApiChange: () => void
   ): Promise<CreateAPIResult> => {
-    const { cache, persistCache, links, client, options } = apolloConfig;
+    const {
+      cache,
+      persistCache,
+      links,
+      client,
+      options,
+      client2,
+      links2,
+    } = apolloConfig;
 
     const saleorCache =
       !client && cache
@@ -105,10 +113,26 @@ export class SaleorManager {
           });
     const apolloClient =
       client || createSaleorClient(saleorCache, saleorLinks, options);
+    const saleorCache2 =
+      !client2 && cache
+        ? cache
+        : await createSaleorCache({
+            persistCache: !!persistCache,
+          });
+    const saleorLinks2 =
+      !client2 && links2
+        ? links2
+        : createSaleorLinks({
+            apiUrl: "https://frontdemo12.herokuapp.com/graphql/",
+            tokenExpirationCallback,
+          });
+    const apolloClient2 =
+      client2 || createSaleorClient(saleorCache2, saleorLinks2, options);
 
     const apiProxy = new APIProxy(apolloClient);
     const api = new SaleorAPI(
       apolloClient,
+      apolloClient2,
       apiProxy,
       config,
       onSaleorApiChange
