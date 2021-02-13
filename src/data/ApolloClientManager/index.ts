@@ -100,7 +100,7 @@ import {
   CmgtCheckoutProductVariants_pms_saleproduct_connection,
 } from "../../queries/gqlTypes/CmgtCheckoutProductVariants";
 
-import { createCheckoutProductVariantsResponse } from "./scripts/convert";
+import { createCheckoutProductVariantsResponse } from "../../dataConverter/Cart";
 
 export class ApolloClientManager {
   private client: ApolloClient<any>;
