@@ -13,7 +13,7 @@
   "plugins": ["import", "react", "prettier"],
   "rules": {
     "comma-spacing": "off",
-    "sort-keys": "error",
+    "sort-keys": "off",
     "sort-imports": "off",
     "import/no-cycle": "off",
     "import/no-internal-modules": "off",
@@ -33,6 +33,8 @@
     "import/no-extraneous-dependencies": [
       "error",
       { "devDependencies": ["testUtils/*.ts", "**/*.test.ts", "**/*.test.tsx"] }
-    ]
+    ],
+    "no-unused-vars": "off",
+    "@typescript-eslint/no-unused-vars": "off"
   }
 }
