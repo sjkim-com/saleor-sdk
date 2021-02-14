@@ -66,6 +66,8 @@ export interface ICheckoutAddress {
     code?: string;
     country?: string;
   };
+  isDefaultBillingAddress?: boolean | null;
+  isDefaultShippingAddress?: boolean | null;
 }
 
 export interface ICheckoutModelShippingMethod {

@@ -1,5 +1,6 @@
 import ApolloClient from "apollo-client";
 
+import { v4 as uuidv4 } from "uuid";
 import { Checkout } from "../../fragments/gqlTypes/Checkout";
 import { Payment } from "../../fragments/gqlTypes/Payment";
 import { User } from "../../fragments/gqlTypes/User";
@@ -13,6 +14,7 @@ import {
 import * as AuthMutations from "../../mutations/auth";
 import * as UserMutations from "../../mutations/user";
 import * as CheckoutMutations from "../../mutations/checkout";
+import * as CmgtCheckoutMutations from "../../mutations/cmgtCheckout";
 import {
   AddCheckoutPromoCode,
   AddCheckoutPromoCodeVariables,
@@ -74,6 +76,7 @@ import {
   UpdateCheckoutShippingMethodVariables,
 } from "../../mutations/gqlTypes/UpdateCheckoutShippingMethod";
 import * as CheckoutQueries from "../../queries/checkout";
+import * as CmgtCheckoutQueries from "../../queries/cmgtCheckout";
 import { CheckoutDetails } from "../../queries/gqlTypes/CheckoutDetails";
 import {
   CheckoutProductVariants,
@@ -85,7 +88,7 @@ import {
 } from "../../queries/gqlTypes/UserCheckoutTokenList";
 import { UserDetails } from "../../queries/gqlTypes/UserDetails";
 import * as UserQueries from "../../queries/user";
-import { filterNotEmptyArrayItems } from "../../utils";
+import { filterNotEmptyArrayItems, decoderOfRelayId } from "../../utils";
 import {
   CreatePaymentInput,
   CompleteCheckoutInput,
@@ -99,7 +102,20 @@ import {
   CmgtCheckoutProductVariants,
   CmgtCheckoutProductVariants_pms_saleproduct_connection,
 } from "../../queries/gqlTypes/CmgtCheckoutProductVariants";
-
+import {
+  CombinationLinesType,
+  resultAddressType,
+  resultCheckoutType,
+  resultShippingMethodsType,
+  resultShippingShippingZoneType,
+  addressValueType,
+  SelectShippingMethodValue,
+  SelectPromoValue,
+  CreatePaymentObjectInput,
+  paymentValue,
+  cardValue,
+  paymentListWithCheckout,
+} from "./typesRelay";
 import { createCheckoutProductVariantsResponse } from "../../dataConverter/Cart";
 
 export class ApolloClientManager {
@@ -674,6 +690,240 @@ export class ApolloClientManager {
     return {};
   };
 
+  cmgtCreateCheckout = async (
+    email: string,
+    shippingAddress?: ICheckoutAddress,
+    combinationLines?: CombinationLinesType[]
+  ) => {
+    const checkoutToken = uuidv4();
+
+    try {
+      const variables = {
+        checkoutObject: {
+          email,
+          metadata: {},
+          billing_address_id: null,
+          private_metadata: {},
+          quantity: 2,
+          country: shippingAddress?.country,
+          shipping_address_id: decoderOfRelayId(shippingAddress?.id!),
+          token: checkoutToken,
+          currency: "JPY",
+          note: "",
+          discount_amount: 0,
+          shipping_method_id: null,
+          discount_name: null,
+          redirect_url: null,
+          translated_discount_name: null,
+          checkout_checkoutlines: {
+            data: combinationLines,
+          },
+          voucher_code: null,
+          tracking_code: null,
+        },
+      };
+
+      const { data, errors } = await this.client.mutate({
+        mutation: CmgtCheckoutMutations.createCheckoutRelay,
+        variables,
+      });
+
+      if (errors?.length) {
+        return {
+          checkoutError: errors,
+        };
+      }
+      if (data.insert_checkout_checkout.affected_rows > 0) {
+        return {
+          checkoutData: data.insert_checkout_checkout.returning[0],
+        };
+      }
+    } catch (error) {
+      return {
+        error,
+      };
+    }
+    return {};
+  };
+
+  cmgtCreateAddress = async (shippingAddress?: ICheckoutAddress) => {
+    try {
+      const variables = {
+        addressObject: {
+          company_name: shippingAddress?.companyName,
+          first_name: shippingAddress?.firstName,
+          last_name: shippingAddress?.lastName,
+          city: shippingAddress?.city,
+          street_address_1: shippingAddress?.streetAddress1,
+          country: "JP",
+          street_address_2: shippingAddress?.streetAddress2,
+          postal_code: shippingAddress?.postalCode,
+          city_area: "",
+          country_area: shippingAddress?.countryArea,
+          phone: shippingAddress?.phone,
+        },
+      };
+
+      const { data, errors } = await this.client.mutate({
+        mutation: CmgtCheckoutMutations.createAddressMutationRelay,
+        variables,
+      });
+
+      if (errors?.length) {
+        return {
+          error: errors,
+        };
+      }
+      if (data.insert_account_address.affected_rows > 0) {
+        return {
+          data: data.insert_account_address.returning[0],
+        };
+      }
+    } catch (error) {
+      return {
+        error,
+      };
+    }
+    return {};
+  };
+
+  cmgtSelectShippingMethodList = async (
+    countryCode: string,
+    lines?: ICheckoutModelLine[]
+  ) => {
+    let availableShippingMethod: resultShippingMethodsType | null;
+
+    try {
+      // Mapping
+      // const variables = {
+      //     productAmt: lines.amount,
+      //     countryCode: countryCode,
+      //     weight: lines.weight,
+      //     currency: lines.currency
+      // };
+
+      // SELETE SippingMethod
+      const shippingMethodList = this.client.watchQuery<
+        resultShippingShippingZoneType,
+        any
+      >({
+        query: CmgtCheckoutQueries.shippingMethodByCountry,
+        variables: {
+          countryCode: "%JP%",
+          currency: "USD",
+          productAmt: 4.5,
+          weight: 1000,
+        },
+      });
+
+      availableShippingMethod = await new Promise((resolve, reject) => {
+        shippingMethodList.subscribe(
+          result => {
+            const { data, errors } = result;
+
+            if (
+              errors === null || errors === undefined
+                ? undefined
+                : errors.length
+            ) {
+              reject(errors);
+            } else {
+              resolve({
+                availableShippingMethods: data.shipping_shippingzone_connection.edges[0].node.shipping_shippingmethods.map(
+                  method => {
+                    return {
+                      // __typename: "ShippingMethod",
+                      id: method.id,
+                      name: method.name,
+                      price: {
+                        // __typename: "Money",
+                        amount: method.price_amount,
+                        currency: method.currency,
+                      },
+                    };
+                  }
+                ),
+              });
+            }
+          },
+          error => {
+            reject(error);
+          }
+        );
+      });
+    } catch (error) {
+      return {
+        shippingMethodError: error,
+      };
+    }
+    return { shippingMethodData: availableShippingMethod };
+  };
+
+  cmgtDataReconstruction = async (
+    email: string,
+    lines?: ICheckoutModelLine[],
+    resultAddress?: resultAddressType,
+    resultCheckout?: resultCheckoutType,
+    resultShippingMethod?: resultShippingMethodsType | null
+  ) => {
+    const result: Checkout = {
+      // __typename: "Checkout",
+      billingAddress: null,
+      id: resultCheckout!?.id,
+      availableShippingMethods: resultShippingMethod!?.availableShippingMethods,
+      token: resultCheckout?.token,
+      email,
+      shippingAddress: {
+        // __typename: "Address",
+        firstName: resultAddress!?.first_name,
+        companyName: resultAddress!?.company_name,
+        id: resultAddress!?.id,
+        lastName: resultAddress!?.last_name,
+        city: resultAddress!?.city,
+        streetAddress1: resultAddress!?.street_address_1,
+        country: {
+          // __typename: "CountryDisplay",
+          code: resultAddress!?.country,
+          country: "Japan",
+        },
+        streetAddress2: resultAddress!?.street_address_2,
+        countryArea: resultAddress!?.country_area,
+        postalCode: resultAddress!?.postal_code,
+        isDefaultBillingAddress: null,
+        isDefaultShippingAddress: null,
+        phone: resultAddress!?.phone,
+      },
+      shippingMethod: null,
+      discount: {
+        // __typename: "Money",
+        currency: "JPY",
+        amount: 0,
+      },
+      isShippingRequired: true,
+      lines: lines!,
+      shippingPrice: {
+        // __typename: "TaxedMoney",
+        gross: {
+          //  __typename: "Money",
+          amount: 0,
+          currency: "JPY",
+        },
+        net: {
+          //  __typename: "Money",
+          amount: 0,
+          currency: "JPY",
+        },
+      },
+      discountName: null,
+      translatedDiscountName: null,
+      availablePaymentGateways: [],
+      voucherCode: null,
+    };
+    return {
+      resultData: this.constructCheckoutModel(result),
+    };
+  };
+
   setCartItem = async (checkout: ICheckoutModel) => {
     const checkoutId = checkout.id;
     const { lines } = checkout;
@@ -843,6 +1093,112 @@ export class ApolloClientManager {
     }
   };
 
+  cmgtSetBillingAddress = async (
+    billingAddress: ICheckoutAddress,
+    checkoutId: string
+  ) => {
+    try {
+      const variables = {
+        addressObject: {
+          city_area: "",
+          city: billingAddress.city,
+          company_name: billingAddress.companyName,
+          country:
+            CountryCode[
+              billingAddress?.country?.code as keyof typeof CountryCode
+            ] === undefined ||
+            CountryCode[
+              billingAddress?.country?.code as keyof typeof CountryCode
+            ] === null
+              ? "JP"
+              : CountryCode[
+                  billingAddress?.country?.code as keyof typeof CountryCode
+                ],
+          country_area: billingAddress.countryArea,
+          first_name: billingAddress.firstName,
+          last_name: billingAddress.lastName,
+          phone: billingAddress.phone,
+          postal_code: billingAddress.postalCode,
+          street_address_1: billingAddress.streetAddress1,
+          street_address_2: billingAddress.streetAddress2,
+        },
+      };
+      const { data, errors } = await this.client.mutate({
+        mutation: CmgtCheckoutMutations.createAddressMutationRelay,
+        variables,
+      });
+
+      if (errors?.length) {
+        return {
+          billingError: errors,
+        };
+      }
+      if (data.insert_account_address.affected_rows > 0) {
+        return {
+          billingData: data.insert_account_address.returning[0],
+        };
+      }
+      return {};
+    } catch (error) {
+      return {
+        billingError: error,
+      };
+    }
+  };
+
+  cmgtUpdateCheckoutBillingAddress = async (
+    billingAddress: addressValueType,
+    checkout: ICheckoutModel,
+    token: string
+  ) => {
+    try {
+      const variables = {
+        token,
+        billingAddressId: decoderOfRelayId(billingAddress.id!),
+        lastChange: new Date(),
+      };
+
+      const { data, errors } = await this.client.mutate({
+        mutation: CmgtCheckoutMutations.updateBillingAddressHasura,
+        variables,
+      });
+
+      if (errors?.length) {
+        return {
+          checkoutBillingError: errors,
+        };
+      }
+      if (data.update_checkout_checkout.affected_rows > 0) {
+        checkout.billingAddress = {
+          id: billingAddress.id,
+          firstName: billingAddress.first_name,
+          lastName: billingAddress.last_name,
+          companyName: billingAddress.company_name,
+          streetAddress1: billingAddress.street_address_1,
+          streetAddress2: billingAddress.street_address_2,
+          city: billingAddress.city,
+          postalCode: billingAddress.postal_code,
+          country: {
+            code: billingAddress.country,
+            country: "Japan",
+          },
+          countryArea: billingAddress.country_area,
+          isDefaultBillingAddress: null,
+          isDefaultShippingAddress: null,
+        };
+
+        return {
+          checkoutBillingData: checkout,
+        };
+      }
+      return {};
+    } catch (error) {
+      return {
+        checkoutBillingError: error,
+      };
+    }
+  };
+
   setBillingAddressWithEmail = async (
     billingAddress: ICheckoutAddress,
     email: string,
@@ -945,6 +1301,43 @@ export class ApolloClientManager {
     }
   };
 
+  cmgtSetShippingMethod = async (
+    selectShippingMethod: SelectShippingMethodValue,
+    checkoutToken: string,
+    checkout: ICheckoutModel
+  ) => {
+    const methodId = decoderOfRelayId(selectShippingMethod.id);
+    try {
+      const { data, errors } = await this.client.mutate({
+        mutation: CmgtCheckoutMutations.updateCheckoutShippingMethodHasura,
+        variables: {
+          token: checkoutToken,
+          shippingMethodId: methodId,
+          lastChange: new Date(),
+        },
+      });
+
+      if (errors?.length) {
+        return {
+          shippingMethodError: errors,
+        };
+      }
+      if (data.update_checkout_checkout.affected_rows > 0) {
+        // selectShippingMethod.id = decoderOfRelayId(selectShippingMethod.id);
+        checkout.shippingMethod = selectShippingMethod;
+
+        return {
+          shippingMethodData: checkout,
+        };
+      }
+      return {};
+    } catch (error) {
+      return {
+        shippingMethodError: error,
+      };
+    }
+  };
+
   addPromoCode = async (promoCode: string, checkoutId: string) => {
     try {
       const { data, errors } = await this.client.mutate<
@@ -968,6 +1361,90 @@ export class ApolloClientManager {
       if (data?.checkoutAddPromoCode?.checkout) {
         return {
           data: this.constructCheckoutModel(data.checkoutAddPromoCode.checkout),
+        };
+      }
+      return {};
+    } catch (error) {
+      return {
+        error,
+      };
+    }
+  };
+
+  selectPromoCode = async (promoCode: string) => {
+    try {
+      const { data, errors } = await this.client.mutate({
+        mutation: CmgtCheckoutQueries.selecDiscountVoucher,
+        variables: { discountCode: promoCode },
+      });
+
+      if (errors?.length) {
+        return {
+          selectPromoError: {
+            code: "INVALID",
+            field: "promoCode",
+            message: "Promo code is invalid",
+            __typename: "CheckoutError",
+          },
+        };
+      }
+
+      if (data.discount_voucher_connection.edges.length > 0) {
+        return {
+          selectPromoData: data.discount_voucher_connection.edges[0].node,
+        };
+      }
+      return {};
+    } catch (error) {
+      return {
+        selectPromoError: error,
+      };
+    }
+  };
+
+  cmgtAddPromoCode = async (
+    promoCode: SelectPromoValue,
+    checkout: ICheckoutModel
+  ) => {
+    try {
+      let discountAmt = 0;
+
+      if (promoCode.discount_value_type === "percentage") {
+        discountAmt =
+          (checkout.shippingMethod?.price!?.amount * promoCode.discount_value) /
+          100;
+      }
+
+      const { data, errors } = await this.client.mutate({
+        mutation: CmgtCheckoutMutations.updateCheckoutDiscount,
+        variables: {
+          token: checkout.token,
+          lastChange: new Date(),
+          currency: promoCode.currency,
+          discountAmt,
+          discountName: promoCode.name,
+          voucherCode: promoCode.code,
+          translatedDiscountName: "",
+        },
+      });
+
+      if (errors?.length) {
+        return {
+          error: errors,
+        };
+      }
+      if (data.update_checkout_checkout.affected_rows > 0) {
+        checkout.promoCodeDiscount = {
+          discount: {
+            currency: data.update_checkout_checkout.returning[0].currency,
+            amount: data.update_checkout_checkout.returning[0].discount_amount,
+          },
+          discountName:
+            data.update_checkout_checkout.returning[0].discount_name,
+          voucherCode: data.update_checkout_checkout.returning[0].voucher_code,
+        };
+        return {
+          data: checkout,
         };
       }
       return {};
@@ -1061,6 +1538,111 @@ export class ApolloClientManager {
     }
   };
 
+  cmgtExistPayment = async (token: string) => {
+    try {
+      const { errors } = await this.client.mutate({
+        mutation: CmgtCheckoutMutations.updatePaymentActive,
+        variables: {
+          token,
+        },
+      });
+
+      if (errors?.length) {
+        return {
+          existPaymentError: errors,
+        };
+      }
+      return {};
+    } catch (error) {
+      return {
+        error,
+      };
+    }
+  };
+
+  cmgtCreatePayment = async ({
+    amount,
+    checkout,
+    gateway,
+    token,
+    returnUrl,
+  }: CreatePaymentObjectInput) => {
+    try {
+      const variables = {
+        paymentObject: {
+          gateway,
+          is_active: true,
+          to_confirm: false,
+          created: new Date(),
+          modified: new Date(),
+          charge_status: "not-charged",
+          token,
+          total: amount,
+          captured_amount: 0,
+          currency: "JPY",
+          checkout_id: checkout?.token,
+          order_id: null,
+          billing_email: checkout?.email,
+          billing_first_name: checkout?.billingAddress?.firstName,
+          billing_last_name: checkout?.billingAddress?.lastName,
+          billing_company_name: checkout?.billingAddress?.companyName,
+          billing_city: checkout?.billingAddress?.city,
+          billing_city_area: "",
+          billing_address_1: checkout?.billingAddress?.streetAddress1,
+          billing_address_2: checkout?.billingAddress?.streetAddress2,
+          billing_postal_code: checkout?.billingAddress?.postalCode,
+          billing_country_code: checkout?.billingAddress?.country?.code,
+          billing_country_area: checkout?.billingAddress?.countryArea,
+          cc_first_digits: "",
+          cc_last_digits: "",
+          cc_brand: "",
+          cc_exp_month: null,
+          cc_exp_year: null,
+          payment_method_type: "",
+          // TODO: ip 취득
+          customer_ip_address: "127.0.0.1",
+          // TODO: userAgent 취득
+          extra_data: "",
+          return_url: returnUrl,
+        },
+      };
+
+      const { data, errors } = await this.client.mutate({
+        mutation: CmgtCheckoutMutations.createPaymentRelay,
+        variables,
+      });
+
+      if (errors?.length) {
+        return {
+          error: errors,
+        };
+      }
+      if (data.insert_payment_payment.affected_rows > 0) {
+        const payment: Payment = {
+          __typename: "Payment",
+          id: data.insert_payment_payment.returning[0].id,
+          gateway: data.insert_payment_payment.returning[0].gateway,
+          token: data.insert_payment_payment.returning[0].token,
+          creditCard: null,
+          total: {
+            __typename: "Money",
+            amount: data.insert_payment_payment.returning[0].total,
+            currency: data.insert_payment_payment.returning[0].currency,
+          },
+        };
+
+        return {
+          data: this.constructPaymentModel(payment),
+        };
+      }
+      return {};
+    } catch (error) {
+      return {
+        error,
+      };
+    }
+  };
+
   completeCheckout = async ({
     checkoutId,
     paymentData,
@@ -1106,6 +1688,424 @@ export class ApolloClientManager {
     }
   };
 
+  cmgtUpdaChekcoutTrackingCode = async (checkoutToken: string) => {
+    try {
+      const { data, errors } = await this.client.mutate({
+        mutation: CmgtCheckoutMutations.updaChekcoutTrackingCode,
+        variables: {
+          token: checkoutToken,
+          trackingCode: uuidv4(),
+          lastChange: new Date(),
+        },
+      });
+
+      if (errors?.length) {
+        return {
+          trackingError: errors,
+        };
+      }
+      if (data.update_checkout_checkout.affected_rows > 0) {
+        return {
+          trackingData: data.update_checkout_checkout.returning[0],
+        };
+      }
+      return {};
+    } catch (error) {
+      return {
+        error,
+      };
+    }
+  };
+
+  cmgtUpdateDiscountVoucherUsed = async (promoCode: string) => {
+    try {
+      const { data, errors } = await this.client.mutate({
+        mutation: CmgtCheckoutMutations.updateDiscountVoucherUsed,
+        variables: {
+          code: {
+            _eq: promoCode,
+          },
+        },
+      });
+
+      if (errors?.length) {
+        return {
+          DiscountVoucherError: errors,
+        };
+      }
+      if (data.update_discount_voucher.affected_rows > 0) {
+        return {
+          DiscountVoucherData: decoderOfRelayId(
+            data.update_discount_voucher.returning[0].id
+          ),
+        };
+      }
+      return {};
+    } catch (error) {
+      return {
+        error,
+      };
+    }
+  };
+
+  cmgtInsertPaymentTransaction = async (paymentData: paymentValue) => {
+    try {
+      const { data, errors } = await this.client.mutate({
+        mutation: CmgtCheckoutMutations.insertPaymentTransaction,
+        variables: {
+          paymentTranObject: {
+            created: new Date(),
+            payment_id: decoderOfRelayId(paymentData.id),
+            token: paymentData.token,
+            kind: "capture",
+            is_success: true,
+            action_required: false,
+            action_required_data: {},
+            currency: paymentData.total.currency,
+            amount: paymentData.total.amount,
+            error: null,
+            // TODO: login시 추가부분
+            customer_id: null,
+            gateway_response: {},
+            already_processed: false,
+            searchable_key: "",
+          },
+        },
+      });
+
+      if (errors?.length) {
+        return {
+          PaymentTranError: errors,
+        };
+      }
+      if (data.insert_payment_transaction.affected_rows > 0) {
+        return {
+          PaymentTranData: decoderOfRelayId(
+            data.insert_payment_transaction.returning[0].id
+          ),
+        };
+      }
+      return {};
+    } catch (error) {
+      return {
+        error,
+      };
+    }
+  };
+
+  cmgtUpdatePaymentResult = async (
+    paymentData: paymentValue,
+    cardInfo: cardValue
+  ) => {
+    try {
+      const { data, errors } = await this.client.mutate({
+        mutation: CmgtCheckoutMutations.updatePaymentResult,
+        variables: {
+          paymentId: decoderOfRelayId(paymentData.id),
+          cardBrand: cardInfo.brand,
+          cardMonth: cardInfo.month,
+          cardYear: cardInfo.year,
+          paymentMethodType: "card",
+          modified: new Date(),
+          charge_status: "fully-charged",
+          capturedAmt: paymentData.total.amount,
+        },
+      });
+
+      if (errors?.length) {
+        return {
+          PaymentResultError: errors,
+        };
+      }
+      if (data.update_payment_payment.affected_rows > 0) {
+        return {
+          PaymentResultData: true,
+        };
+      }
+      return {};
+    } catch (error) {
+      return {
+        error,
+      };
+    }
+  };
+
+  cmgtUpdatePaymentTransaction = async (paymentTranId: number) => {
+    try {
+      const { data, errors } = await this.client.mutate({
+        mutation: CmgtCheckoutMutations.updatePaymentTransaction,
+        variables: {
+          paymentTranId,
+        },
+      });
+
+      if (errors?.length) {
+        return {
+          UpdatePaymentTranError: errors,
+        };
+      }
+      if (data.update_payment_transaction.affected_rows > 0) {
+        return {
+          UpdatePaymentTranData: true,
+        };
+      }
+      return {};
+    } catch (error) {
+      return {
+        error,
+      };
+    }
+  };
+
+  cmgtInsertOrder = async (
+    trackingCode: string,
+    paymentTranId: number,
+    discountId: number,
+    checkout: ICheckoutModel,
+    paymentData: paymentValue
+  ) => {
+    try {
+      const orderToken = uuidv4();
+
+      const orderLines = checkout.lines?.map(line => {
+        return {
+          variant_id: decoderOfRelayId(line.variant.id),
+          product_name: line.variant.product?.name,
+          variant_name: line.variant.name,
+          translated_product_name: "",
+          translated_variant_name: "",
+          product_sku: line.variant.sku,
+          is_shipping_required:
+            line.variant.product?.productType.isShippingRequired,
+          quantity: line.quantity,
+          quantity_fulfilled: 0,
+          currency: line.totalPrice?.net.currency,
+          unit_price_net_amount: line.totalPrice?.net.amount,
+          unit_price_gross_amount: line.totalPrice?.gross.amount,
+          tax_rate: 0,
+        };
+      });
+
+      const { data, errors } = await this.client.mutate({
+        mutation: CmgtCheckoutMutations.insertOrder,
+        variables: {
+          orderObject: {
+            private_metadata: {},
+            metadata: {},
+            created: new Date(),
+            status: "unfulfilled",
+            // TODO : login 시 userid 세팅
+            user_id: null,
+            language_code: "jp",
+            tracking_client_id: trackingCode,
+            billing_address_id: decoderOfRelayId(checkout.billingAddress?.id!),
+            shipping_address_id: decoderOfRelayId(
+              checkout.shippingAddress?.id!
+            ),
+            user_email: checkout.email,
+            currency: paymentData.total.currency,
+            shipping_method_id: decoderOfRelayId(checkout.shippingMethod?.id!),
+            shipping_method_name: checkout.shippingMethod?.name,
+            shipping_price_net_amount: checkout.lines?.reduce(
+              (accumulator, currentValue) =>
+                accumulator + (currentValue.totalPrice?.net.amount || 0),
+              0
+            ),
+            shipping_price_gross_amount: checkout.lines?.reduce(
+              (accumulator, currentValue) =>
+                accumulator + (currentValue.totalPrice?.gross.amount || 0),
+              0
+            ),
+            token: orderToken,
+            checkout_token: checkout.token,
+            total_net_amount: paymentData.total.amount,
+            total_gross_amount: paymentData.total.amount,
+            voucher_id: discountId,
+            discount_amount: checkout.promoCodeDiscount?.discount?.amount,
+            discount_name: checkout.promoCodeDiscount?.discountName,
+            translated_discount_name: "",
+            display_gross_prices: true,
+            customer_note: "",
+            // TODO : 중량 어떻게 할지
+            weight: 1000,
+            order_orderlines: {
+              data: orderLines,
+            },
+          },
+        },
+      });
+
+      if (errors?.length) {
+        return {
+          orderError: errors,
+        };
+      }
+      if (data.insert_order_order.affected_rows > 0) {
+        return {
+          orderData: decoderOfRelayId(data.insert_order_order.returning[0].id),
+        };
+      }
+      return {};
+    } catch (error) {
+      return {
+        error,
+      };
+    }
+  };
+
+  cmgtUpdatePaymentOrderId = async (orderId: number, checkoutToken: string) => {
+    try {
+      const { data, errors } = await this.client.mutate({
+        mutation: CmgtCheckoutMutations.updatePaymentOrderId,
+        variables: {
+          orderId,
+          checkoutId: checkoutToken,
+        },
+      });
+
+      if (errors?.length) {
+        return {
+          updatePaymentOrderError: errors,
+        };
+      }
+      if (data.update_payment_payment.affected_rows > 0) {
+        return {
+          updatePaymentOrderData: true,
+        };
+      }
+      return {};
+    } catch (error) {
+      return {
+        error,
+      };
+    }
+  };
+
+  cmgtDeleteCheckoutlineAndGift = async (checkoutToken: string) => {
+    try {
+      const { data, errors } = await this.client.mutate({
+        mutation: CmgtCheckoutMutations.deleteCheckoutGiftCard,
+        variables: {
+          checkoutId: checkoutToken,
+        },
+      });
+
+      if (errors?.length) {
+        return {
+          deleteCheckoutlineAndGiftError: errors,
+        };
+      }
+      if (
+        data.delete_checkout_checkout_gift_cards.affected_rows > 0 ||
+        data.delete_checkout_checkoutline.affected_rows > 0
+      ) {
+        return {
+          deleteCheckoutlineAndGiftData: true,
+        };
+      }
+      return {};
+    } catch (error) {
+      return {
+        error,
+      };
+    }
+  };
+
+  cmgtSelectPayemntIncludeCheckout = async (checkoutToken: string) => {
+    let paymentWithCheckout: paymentListWithCheckout;
+
+    try {
+      const observable = this.client.watchQuery({
+        query: CmgtCheckoutQueries.selectPayemntIncludeCheckout,
+        variables: {
+          checkoutId: checkoutToken,
+        },
+      });
+      paymentWithCheckout = await new Promise((resolve, reject) => {
+        observable.subscribe(
+          result => {
+            const { data, errors } = result;
+
+            if (errors?.length) {
+              reject(errors);
+            } else {
+              resolve(data.payment_payment_connection);
+            }
+          },
+          error => {
+            reject(error);
+          }
+        );
+      });
+
+      const productIdList: number[] = paymentWithCheckout.edges.map(edge => {
+        return decoderOfRelayId(edge.node.id);
+      });
+
+      return {
+        selecPaymentData: productIdList,
+      };
+    } catch (error) {
+      return {
+        selecPaymentError: error,
+      };
+    }
+  };
+
+  cmgtUpdatePaymentExceptCheckout = async (paymentIds: number[]) => {
+    try {
+      const { data, errors } = await this.client.mutate({
+        mutation: CmgtCheckoutMutations.updatePaymentExceptCheckout,
+        variables: {
+          paymentIds,
+        },
+      });
+
+      if (errors?.length) {
+        return {
+          exceptChekcoutError: errors,
+        };
+      }
+      if (data.update_payment_payment.affected_rows > 0) {
+        return {
+          exceptChekcoutData: true,
+        };
+      }
+      return {};
+    } catch (error) {
+      return {
+        error,
+      };
+    }
+  };
+
+  cmgtDeleteCheckout = async (checkoutToken: string) => {
+    try {
+      const { data, errors } = await this.client.mutate({
+        mutation: CmgtCheckoutMutations.deleteCheckout,
+        variables: {
+          checkoutId: checkoutToken,
+        },
+      });
+
+      if (errors?.length) {
+        return {
+          deleteCheckoutError: errors,
+        };
+      }
+      if (data.delete_checkout_checkout.affected_rows > 0) {
+        return {
+          deleteCheckoutData: true,
+        };
+      }
+      return {};
+    } catch (error) {
+      return {
+        error,
+      };
+    }
+  };
+
   private constructCheckoutModel = ({
     id,
     token,
@@ -1120,7 +2120,21 @@ export class ApolloClientManager {
     availableShippingMethods,
     shippingMethod,
   }: Checkout): ICheckoutModel => ({
-    availablePaymentGateways,
+    availablePaymentGateways: [
+      {
+        // __typename:"PaymentGateway",
+        id: "mirumee.payments.dummy",
+        name: "Dummy",
+        config: [
+          {
+            // __typename:"GatewayConfigLine",
+            field: "store_customer_card",
+            value: "false",
+          },
+        ],
+        currencies: ["JPY"],
+      },
+    ],
     availableShippingMethods: availableShippingMethods
       ? availableShippingMethods.filter(filterNotEmptyArrayItems)
       : [],

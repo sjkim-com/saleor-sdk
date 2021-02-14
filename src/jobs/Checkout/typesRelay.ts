@@ -1,17 +1,19 @@
 import { ICreditCard } from "../../api/Checkout/types";
-import { ICheckoutAddress } from "../../helpers/LocalStorageHandler";
+import {
+  ICheckoutAddress,
+  ICheckoutModelLine,
+} from "../../helpers/LocalStorageHandler";
 
 export interface ProvideCheckoutJobInput {
   isUserSignedIn: boolean;
   channel: string;
 }
 
-export interface CreateCheckoutJobInput {
+export interface CreateCheckoutJobInput_Relay {
   email: string;
-  lines: Array<{ variantId: string; quantity: number }>;
-  channel: string;
-  shippingAddress?: ICheckoutAddress;
+  lines: ICheckoutModelLine[];
   selectedShippingAddressId?: string;
+  shippingAddress?: ICheckoutAddress;
   billingAddress?: ICheckoutAddress;
   selectedBillingAddressId?: string;
 }
@@ -29,7 +31,6 @@ export interface SetBillingAddressJobInput {
   billingAddress: ICheckoutAddress;
   billingAsShipping?: boolean;
   selectedBillingAddressId?: string;
-  token?: string;
 }
 
 export interface SetBillingAddressWithEmailJobInput {
@@ -65,19 +66,35 @@ export interface CreatePaymentJobInput {
 
 export interface CompleteCheckoutJobInput {
   checkoutId: string;
-  paymentData?: paymentValue;
+  paymentData?: object;
   redirectUrl?: string;
   storeSource?: boolean;
 }
 
-export interface paymentValue {
-  gateway: string;
-  id: string;
-  token: string;
-  total: totalValue;
+export interface SetShippingMethodJobRelayInput {
+  checkoutToken: string;
+  selectShippingMethod: SelectShippingMethodValue;
 }
 
-export interface totalValue {
-  amount: number;
+export interface SelectShippingMethodValue {
+  id: string;
+  name: string;
+  price: SelectShippingMethodPriceValue | null;
+}
+
+export interface SelectShippingMethodPriceValue {
   currency: string;
+  amount: number;
+}
+
+export interface selectPromoCodeJobInput {
+  promoCode: string;
+}
+
+export interface cardValue {
+  cardNo: string;
+  brand: string;
+  cvc: number;
+  year: number;
+  month: number;
 }

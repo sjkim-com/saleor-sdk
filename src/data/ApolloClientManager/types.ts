@@ -37,7 +37,25 @@ export interface CreatePaymentInput {
 
 export interface CompleteCheckoutInput {
   checkoutId: string;
-  paymentData?: object;
+  paymentData?: paymentValue;
   redirectUrl?: string;
   storeSource?: boolean;
+}
+
+export interface CombinationLinesType {
+  quantity: number;
+  variant_id: number;
+  data: string;
+}
+
+export interface paymentValue {
+  gateway: string;
+  id: string;
+  token: string;
+  total: totalValue;
+}
+
+export interface totalValue {
+  amount: number;
+  currency: string;
 }

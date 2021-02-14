@@ -181,6 +181,62 @@ export class SaleorCheckoutAPI extends ErrorListener {
     };
   };
 
+  cmgtSetShippingAddress = async (
+    shippingAddress: IAddress,
+    email: string
+  ): CheckoutResponse => {
+    const checkoutId = this.saleorState.checkout?.id;
+    const alteredLines = this.saleorState.checkout?.lines;
+
+    if (alteredLines && checkoutId) {
+      const { data, dataError } = await this.jobsManager.run(
+        "checkout",
+        "setShippingAddress",
+        {
+          channel: this.config.channel,
+          checkoutId,
+          email,
+          selectedShippingAddressId: shippingAddress.id,
+          shippingAddress,
+        }
+      );
+
+      return {
+        data,
+        dataError,
+        pending: false,
+      };
+    }
+    if (alteredLines) {
+      const { data, dataError } = await this.jobsManager.run(
+        "checkout",
+        "cmgtCreateCheckout",
+        {
+          // channel: this.config.channel,
+          email,
+          lines: alteredLines,
+          selectedShippingAddressId: shippingAddress.id,
+          shippingAddress,
+        }
+      );
+
+      return {
+        data,
+        dataError,
+        pending: false,
+      };
+    }
+    return {
+      functionError: {
+        error: new Error(
+          "You need to add items to cart before setting shipping address."
+        ),
+        type: FunctionErrorCheckoutTypes.ITEMS_NOT_ADDED_TO_CART,
+      },
+      pending: false,
+    };
+  };
+
   setBillingAddress = async (
     billingAddress: IAddress,
     email?: string
@@ -286,6 +342,110 @@ export class SaleorCheckoutAPI extends ErrorListener {
     };
   };
 
+  cmgtSetBillingAddress = async (
+    billingAddress: IAddress,
+    email?: string
+  ): CheckoutResponse => {
+    const checkoutId = this.saleorState.checkout?.id;
+
+    const isShippingRequiredForProducts = this.saleorState.checkout?.lines
+      ?.filter(line => line.quantity > 0)
+      .some(({ variant }) => variant.product?.productType.isShippingRequired);
+    const alteredLines = this.saleorState.checkout?.lines;
+
+    if (
+      isShippingRequiredForProducts &&
+      checkoutId &&
+      this.checkout?.shippingAddress
+    ) {
+      const { data, dataError } = await this.jobsManager.run(
+        "checkout",
+        "cmgtSetBillingAddress",
+        {
+          billingAddress,
+          billingAsShipping: false,
+          checkoutId,
+          selectedBillingAddressId: billingAddress.id,
+          token: this.checkout?.token,
+        }
+      );
+
+      return {
+        data,
+        dataError,
+        pending: false,
+      };
+    }
+    if (isShippingRequiredForProducts) {
+      return {
+        functionError: {
+          error: new Error(
+            "You need to set shipping address before setting billing address."
+          ),
+          type: FunctionErrorCheckoutTypes.SHIPPING_ADDRESS_NOT_SET,
+        },
+        pending: false,
+      };
+    }
+    if (!isShippingRequiredForProducts && email && checkoutId && alteredLines) {
+      const { data, dataError } = await this.jobsManager.run(
+        "checkout",
+        "setBillingAddressWithEmail",
+        {
+          billingAddress,
+          checkoutId,
+          email,
+          selectedBillingAddressId: billingAddress.id,
+        }
+      );
+
+      return {
+        data,
+        dataError,
+        pending: false,
+      };
+    }
+    if (!isShippingRequiredForProducts && email && alteredLines) {
+      const { data, dataError } = await this.jobsManager.run(
+        "checkout",
+        "cmgtCreateCheckout",
+        {
+          email,
+          lines: alteredLines,
+          billingAddress,
+          selectedBillingAddressId: billingAddress.id,
+          // channel: this.config.channel,
+        }
+      );
+
+      return {
+        data,
+        dataError,
+        pending: false,
+      };
+    }
+    if (!isShippingRequiredForProducts && !email) {
+      return {
+        functionError: {
+          error: new Error(
+            "You need to provide email when products do not require shipping before setting billing address."
+          ),
+          type: FunctionErrorCheckoutTypes.EMAIL_NOT_SET,
+        },
+        pending: false,
+      };
+    }
+    return {
+      functionError: {
+        error: new Error(
+          "You need to add items to cart before setting billing address."
+        ),
+        type: FunctionErrorCheckoutTypes.ITEMS_NOT_ADDED_TO_CART,
+      },
+      pending: false,
+    };
+  };
+
   setBillingAsShippingAddress = async (): PromiseRunResponse<
     DataErrorCheckoutTypes,
     FunctionErrorCheckoutTypes
@@ -321,6 +481,42 @@ export class SaleorCheckoutAPI extends ErrorListener {
     };
   };
 
+  cmgtSetBillingAsShippingAddress = async (): PromiseRunResponse<
+    DataErrorCheckoutTypes,
+    FunctionErrorCheckoutTypes
+  > => {
+    const checkoutId = this.saleorState.checkout?.id;
+
+    if (checkoutId && this.checkout?.shippingAddress) {
+      const { data, dataError } = await this.jobsManager.run(
+        "checkout",
+        "cmgtSetBillingAddress",
+        {
+          billingAddress: this.checkout.shippingAddress,
+          billingAsShipping: true,
+          checkoutId,
+          selectedBillingAddressId: this.checkout?.shippingAddress.id,
+          token: this.checkout?.token,
+        }
+      );
+
+      return {
+        data,
+        dataError,
+        pending: false,
+      };
+    }
+    return {
+      functionError: {
+        error: new Error(
+          "You need to set shipping address before setting billing address."
+        ),
+        type: FunctionErrorCheckoutTypes.SHIPPING_ADDRESS_NOT_SET,
+      },
+      pending: false,
+    };
+  };
+
   setShippingMethod = async (shippingMethodId: string): CheckoutResponse => {
     const checkoutId = this.saleorState.checkout?.id;
 
@@ -331,6 +527,41 @@ export class SaleorCheckoutAPI extends ErrorListener {
         {
           checkoutId,
           shippingMethodId,
+        }
+      );
+      return {
+        data,
+        dataError,
+        pending: false,
+      };
+    }
+    return {
+      functionError: {
+        error: new Error(
+          "You need to set shipping address before setting shipping method."
+        ),
+        type: FunctionErrorCheckoutTypes.SHIPPING_ADDRESS_NOT_SET,
+      },
+      pending: false,
+    };
+  };
+
+  cmgtSetShippingMethod = async (
+    shippingMethodId: string
+  ): CheckoutResponse => {
+    const checkoutId = this.saleorState.checkout?.id;
+    const checkoutToken = this.saleorState.checkout?.token;
+    const selectShippingMethod = this.saleorState.checkout?.availableShippingMethods!?.filter(
+      method => method.id === shippingMethodId
+    )[0];
+
+    if (checkoutId) {
+      const { data, dataError } = await this.jobsManager.run(
+        "checkout",
+        "cmgtSetShippingMethod",
+        {
+          checkoutToken,
+          selectShippingMethod,
         }
       );
       return {
@@ -407,6 +638,36 @@ export class SaleorCheckoutAPI extends ErrorListener {
     };
   };
 
+  cmgtAddPromoCode = async (promoCode: string): CheckoutResponse => {
+    const checkoutId = this.saleorState.checkout?.id;
+
+    if (checkoutId) {
+      const { data, dataError } = await this.jobsManager.run(
+        "checkout",
+        "cmgtAddPromoCode",
+        {
+          checkoutId,
+          promoCode,
+        }
+      );
+
+      return {
+        data,
+        dataError,
+        pending: false,
+      };
+    }
+    return {
+      functionError: {
+        error: new Error(
+          "You need to set shipping address before modifying promo code."
+        ),
+        type: FunctionErrorCheckoutTypes.SHIPPING_ADDRESS_NOT_SET,
+      },
+      pending: false,
+    };
+  };
+
   createPayment = async (input: CreatePaymentInput): CheckoutResponse => {
     const checkoutId = this.saleorState.checkout?.id;
     const amount = this.saleorState.summaryPrices?.totalPrice?.gross.amount;
@@ -415,6 +676,37 @@ export class SaleorCheckoutAPI extends ErrorListener {
       const { data, dataError } = await this.jobsManager.run(
         "checkout",
         "createPayment",
+        {
+          ...input,
+          amount,
+          checkoutId,
+        }
+      );
+      return {
+        data,
+        dataError,
+        pending: false,
+      };
+    }
+    return {
+      functionError: {
+        error: new Error(
+          "You need to set billing address before creating payment."
+        ),
+        type: FunctionErrorCheckoutTypes.SHIPPING_ADDRESS_NOT_SET,
+      },
+      pending: false,
+    };
+  };
+
+  cmgtCreatePayment = async (input: CreatePaymentInput): CheckoutResponse => {
+    const checkoutId = this.saleorState.checkout?.id;
+    const amount = this.saleorState.summaryPrices?.totalPrice?.gross.amount;
+
+    if (checkoutId && amount !== null && amount !== undefined) {
+      const { data, dataError } = await this.jobsManager.run(
+        "checkout",
+        "cmgtCreatePayment",
         {
           ...input,
           amount,
@@ -447,6 +739,34 @@ export class SaleorCheckoutAPI extends ErrorListener {
       const { data, dataError } = await this.jobsManager.run(
         "checkout",
         "completeCheckout",
+        { ...input, checkoutId }
+      );
+      return {
+        data,
+        dataError,
+        pending: false,
+      };
+    }
+    return {
+      functionError: {
+        error: new Error(
+          "You need to set shipping address before creating payment."
+        ),
+        type: FunctionErrorCheckoutTypes.SHIPPING_ADDRESS_NOT_SET,
+      },
+      pending: false,
+    };
+  };
+
+  cmgtCompleteCheckout = async (
+    input?: CompleteCheckoutInput
+  ): CheckoutResponse => {
+    const checkoutId = this.saleorState.checkout?.id;
+
+    if (checkoutId) {
+      const { data, dataError } = await this.jobsManager.run(
+        "checkout",
+        "cmgtCompleteCheckout",
         { ...input, checkoutId }
       );
       return {

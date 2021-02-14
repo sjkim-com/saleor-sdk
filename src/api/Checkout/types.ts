@@ -83,7 +83,19 @@ export interface CreatePaymentInput {
 }
 
 export interface CompleteCheckoutInput {
-  paymentData?: object;
+  paymentData?: paymentValue;
   redirectUrl?: string;
   storeSource?: boolean;
+}
+
+export interface paymentValue {
+  gateway: string;
+  id: string;
+  token: string;
+  total: totalValue;
+}
+
+export interface totalValue {
+  amount: number;
+  currency: string;
 }
