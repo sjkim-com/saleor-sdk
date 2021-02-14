@@ -25,6 +25,7 @@
     "react/jsx-props-no-spreading": "off",
     "react/jsx-wrap-multilines": "off",
     "react/prop-types": "off",
+    "no-param-reassign": "off",
     "@typescript-eslint/camelcase": "off",
     "@typescript-eslint/indent": "off",
     "@typescript-eslint/quotes": "off",
