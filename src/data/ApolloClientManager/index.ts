@@ -1984,7 +1984,7 @@ export class ApolloClientManager {
   cmgtDeleteCheckoutlineAndGift = async (checkoutToken: string) => {
     try {
       const { data, errors } = await this.client.mutate({
-        mutation: CmgtCheckoutMutations.deleteCheckoutGiftCard,
+        mutation: CmgtCheckoutMutations.deleteCheckoutlineAndGift,
         variables: {
           checkoutId: checkoutToken,
         },
