@@ -79,10 +79,7 @@ import {
   CheckoutProductVariants,
   CheckoutProductVariants_productVariants,
 } from "../../queries/gqlTypes/CheckoutProductVariants";
-import {
-  UserCheckoutTokenList,
-  UserCheckoutTokenListVariables,
-} from "../../queries/gqlTypes/UserCheckoutTokenList";
+import { UserCheckoutDetails } from "../../queries/gqlTypes/UserCheckoutDetails";
 import { UserDetails } from "../../queries/gqlTypes/UserDetails";
 import * as UserQueries from "../../queries/user";
 import { filterNotEmptyArrayItems } from "../../utils";
@@ -302,38 +299,63 @@ export class ApolloClientManager {
 
   getCheckout = async (
     isUserSignedIn: boolean,
-    channel: string,
+    // channel: string,
     checkoutToken: string | null
   ) => {
     let checkout: Checkout | null;
     try {
       checkout = await new Promise(async (resolve, reject) => {
-        let token = checkoutToken;
+        // if (isUserSignedIn) {
+        //   const { data, errors } = await this.client.query<
+        //     UserCheckoutTokenList,
+        //     UserCheckoutTokenListVariables
+        //   >({
+        //     fetchPolicy: "network-only",
+        //     query: CheckoutQueries.userCheckoutTokenList,
+        //     variables: {
+        //       channel,
+        //     },
+        //   });
+        //
+        //   if (errors?.length) {
+        //     reject(errors);
+        //   } else if (data.me?.checkoutTokens) {
+        //     [token] = data.me.checkoutTokens;
+        //   }
+        // }
+        //
+        // if (token) {
+        //   const observable = this.client.watchQuery<CheckoutDetails, any>({
+        //     fetchPolicy: "network-only",
+        //     query: CheckoutQueries.checkoutDetails,
+        //     variables: {
+        //       token,
+        //     },
+        //   });
         if (isUserSignedIn) {
-          const { data, errors } = await this.client.query<
-            UserCheckoutTokenList,
-            UserCheckoutTokenListVariables
-          >({
+          const observable = this.client.watchQuery<UserCheckoutDetails, any>({
             fetchPolicy: "network-only",
-            query: CheckoutQueries.userCheckoutTokenList,
-            variables: {
-              channel,
-            },
+            query: CheckoutQueries.userCheckoutDetails,
           });
-
-          if (errors?.length) {
-            reject(errors);
-          } else if (data.me?.checkoutTokens) {
-            [token] = data.me.checkoutTokens;
-          }
-        }
-
-        if (token) {
+          observable.subscribe(
+            result => {
+              const { data, errors } = result;
+              if (errors?.length) {
+                reject(errors);
+              } else {
+                resolve(data.me?.checkout);
+              }
+            },
+            error => {
+              reject(error);
+            }
+          );
+        } else if (checkoutToken) {
           const observable = this.client.watchQuery<CheckoutDetails, any>({
             fetchPolicy: "network-only",
             query: CheckoutQueries.checkoutDetails,
             variables: {
-              token,
+              token: checkoutToken,
             },
           });
           observable.subscribe(

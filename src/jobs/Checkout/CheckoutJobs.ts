@@ -39,13 +39,11 @@ class CheckoutJobs extends JobsHandler<{}> {
 
   provideCheckout = async ({
     isUserSignedIn,
-    channel,
   }: ProvideCheckoutJobInput): PromiseCheckoutJobRunResponse => {
     const checkout = LocalStorageHandler.getCheckout();
 
     const { data, error } = await this.apolloClientManager.getCheckout(
       isUserSignedIn,
-      channel,
       checkout?.token
     );
 

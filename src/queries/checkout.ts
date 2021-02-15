@@ -23,6 +23,18 @@ export const userCheckoutTokenList = gql`
   }
 `;
 
+export const userCheckoutDetails = gql`
+  ${checkoutFragment}
+  query UserCheckoutDetails {
+    me {
+      id
+      checkout {
+        ...Checkout
+      }
+    }
+  }
+`;
+
 export const checkoutProductVariants = gql`
   ${checkoutProductVariantFragment}
   query CheckoutProductVariants($ids: [ID], $channel: String) {
