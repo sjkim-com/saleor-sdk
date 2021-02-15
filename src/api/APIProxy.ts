@@ -41,6 +41,9 @@ import {
 } from "./types";
 import { WINDOW_EXISTS } from "../consts";
 
+// CMGT用
+import { updateAccountUserVariantsResponse } from "../dataConverter/Account";
+
 const handleDataErrors = <T extends QueryShape, TData>(
   mapFn: MapFn<T, TData> | WatchMapFn<T, TData>,
   data: TData,
@@ -320,6 +323,11 @@ class APIProxy {
   setAccountUpdate = this.fireQuery(
     MUTATIONS.AccountUpdate,
     data => data!.accountUpdate
+  );
+
+  // CMGT用
+  cmgtSetAccountUpdate = this.fireQuery(MUTATIONS.CmgtAccountUpdate, data =>
+    updateAccountUserVariantsResponse(data!.update_account_user)
   );
 
   setPassword = async (

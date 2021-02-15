@@ -43,6 +43,13 @@ import {
   AccountUpdateVariables,
 } from "./gqlTypes/AccountUpdate";
 
+// CMGT用
+import * as CmgtUser from "./cmgtUser";
+import {
+  CmgtAccountUpdate,
+  CmgtAccountUpdateVariables,
+} from "./gqlTypes/CmgtAccountUpdate";
+
 export type MutationOptions<TData, TVariables> = Omit<
   ApolloMutationOptions<TData, TVariables>,
   "mutation"
@@ -69,6 +76,16 @@ export const MUTATIONS = {
       mutation: Address.setCustomerDefaultAddress,
       ...options,
     }),
+
+  CmgtAccountUpdate: <TCacheShape>(
+    client: ApolloClient<TCacheShape>,
+    options: MutationOptions<CmgtAccountUpdate, CmgtAccountUpdateVariables>
+  ) =>
+    client.mutate({
+      mutation: CmgtUser.cmgtAccountUpdate,
+      ...options,
+    }),
+
   CreateUserAddress: <TCacheShape>(
     client: ApolloClient<TCacheShape>,
     options: MutationOptions<CreateUserAddress, CreateUserAddressVariables>

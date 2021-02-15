@@ -17,3 +17,5 @@ export const usePasswordChange = mutationFactory("setPasswordChange");
 export const useAccountUpdate = mutationFactory("setAccountUpdate");
 
 export const useSetPassword = mutationFactory("setPassword");
+
+export const cmgtUseAccountUpdate = mutationFactory("cmgtSetAccountUpdate");

@@ -6,6 +6,7 @@ import {
   CreateUserAddressCheck,
   CreateUserAddress_accountAddressCreate,
 } from "../mutations/gqlTypes/CreateUserAddress";
+import { AccountUpdate_accountUpdate } from "../mutations/gqlTypes/AccountUpdate";
 import { TokenAuth_tokenCreate } from "../mutations/gqlTypes/TokenAuth";
 import BaseDetails from "../helpers/BaseDetails";
 import BaseList, { BaseListVariables } from "../helpers/BaseList";
@@ -52,6 +53,11 @@ export type CreateAddressResult = {
 
 export type SelectUserAddressResult = {
   data: CreateUserAddress_accountAddressCreate | null;
+  error: ApolloError | null;
+} | null;
+
+export type CmgtAccountUpdateReult = {
+  data: AccountUpdate_accountUpdate | null;
   error: ApolloError | null;
 } | null;
 

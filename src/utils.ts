@@ -1,4 +1,4 @@
-import { decode } from "base-64";
+import { decode, encode } from "base-64";
 import { MapFn, QueryShape, WatchMapFn } from "./types";
 
 // errors are nested in data as it currently stands in the API
@@ -73,4 +73,8 @@ export const decoderOfRelayId = (graphqlId: string) => {
     return parseInt(resultId, 10);
   }
   return parseInt(graphqlId, 10);
+};
+
+export const encodeId = (id: string, schema: string) => {
+  return encode(`${schema}:${id}`);
 };

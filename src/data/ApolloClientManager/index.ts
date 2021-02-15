@@ -94,7 +94,6 @@ import {
 } from "./types";
 
 // CMGT用
-import * as CmgtQueries from "../../queries/cmgt";
 import {
   CmgtCheckoutProductVariants,
   CmgtCheckoutProductVariants_pms_saleproduct_connection,
@@ -359,7 +358,7 @@ export class ApolloClientManager {
               if (errors?.length) {
                 reject(errors);
               } else {
-                resolve(data.me?.checkout);
+                resolve(data.me?.checkout || null);
               }
             },
             error => {
@@ -539,7 +538,7 @@ export class ApolloClientManager {
           CmgtCheckoutProductVariants,
           any
         >({
-          query: CmgtQueries.cmgtCheckoutProductVariants,
+          query: CmgtCheckoutQueries.cmgtCheckoutProductVariants,
           variables: {
             ids: idsOfMissingVariants,
           },
