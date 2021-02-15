@@ -4,6 +4,7 @@ import {
 } from "apollo-client";
 
 import * as Address from "./address";
+import * as CmgtMutation from "./cmgtCheckout";
 import * as User from "./user";
 
 import {
@@ -14,6 +15,10 @@ import {
 import {
   CreateUserAddress,
   CreateUserAddressVariables,
+  CreateUserAddressCmgt,
+  CreateUserAddressVariablesCmgt,
+  SelectUserAddressVariablesCmgt,
+  SelectUserAddressCmgt,
 } from "./gqlTypes/CreateUserAddress";
 
 import {
@@ -72,6 +77,44 @@ export const MUTATIONS = {
       mutation: Address.createUserAddress,
       ...options,
     }),
+
+  cmgtCreateUserAddress: <TCacheShape>(
+    client: ApolloClient<TCacheShape>,
+    options: MutationOptions<
+      CreateUserAddressCmgt,
+      CreateUserAddressVariablesCmgt
+    >
+  ) =>
+    client.mutate({
+      mutation: CmgtMutation.createAddressMutationRelay,
+      variables: {
+        addressObject: {
+          first_name: options.variables?.addressObject.firstName,
+          last_name: options.variables?.addressObject.firstName,
+          company_name: options.variables?.addressObject.companyName,
+          street_address_1: options.variables?.addressObject.streetAddress1,
+          street_address_2: options.variables?.addressObject.streetAddress2,
+          postal_code: options.variables?.addressObject.postalCode,
+          country_area: options.variables?.addressObject.countryArea,
+          country: "JP",
+          city: options.variables?.addressObject.city,
+          city_area: "",
+        },
+      },
+    }),
+
+  cmgtSelectUserAddress: <TCacheShape>(
+    client: ApolloClient<TCacheShape>,
+    options: MutationOptions<
+      SelectUserAddressCmgt,
+      SelectUserAddressVariablesCmgt
+    >
+  ) =>
+    client.mutate({
+      mutation: CmgtMutation.selectUserAddress,
+      ...options,
+    }),
+
   DeleteUserAddress: <TCacheShape>(
     client: ApolloClient<TCacheShape>,
     options: MutationOptions<DeleteUserAddress, DeleteUserAddressVariables>

@@ -4,6 +4,12 @@ import { mutationFactory } from "./useMutation";
 export const useDefaultUserAddress = mutationFactory("setUserDefaultAddress");
 export const useDeleteUserAddresss = mutationFactory("setDeleteUserAddress");
 export const useCreateUserAddress = mutationFactory("setCreateUserAddress");
+export const cmgtUseCreateUserAddress = mutationFactory(
+  "cmgtSetCreateUserAddress"
+);
+export const cmgtSelectUserAddress = mutationFactory(
+  "cmgtSetSelectUserAddress"
+);
 export const useUpdateUserAddress = mutationFactory("setUpdateuserAddress");
 
 // User mutations

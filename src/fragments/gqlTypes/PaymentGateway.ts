@@ -8,7 +8,7 @@
 // ====================================================
 
 export interface PaymentGateway_config {
-  __typename: "GatewayConfigLine";
+  // __typename: "GatewayConfigLine";
   /**
    * Gateway config key.
    */
@@ -20,7 +20,7 @@ export interface PaymentGateway_config {
 }
 
 export interface PaymentGateway {
-  __typename: "PaymentGateway";
+  // __typename: "PaymentGateway";
   /**
    * Payment gateway ID.
    */

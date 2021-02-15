@@ -3,7 +3,7 @@
 import {
   CmgtCheckoutProductVariants_pms_saleproduct_connection,
   CmgtCheckoutProductVariants_pms_saleproduct_connection_edges_node,
-} from "../../../queries/gqlTypes/CmgtCheckoutProductVariants";
+} from "../queries/gqlTypes/CmgtCheckoutProductVariants";
 
 import {
   CheckoutProductVariants_productVariants_edges_node_pricing_priceUndiscounted_gross,
@@ -23,7 +23,7 @@ import {
   CheckoutProductVariants_productVariants_edges_node,
   CheckoutProductVariants_productVariants_edges,
   CheckoutProductVariants_productVariants,
-} from "../../../queries/gqlTypes/CheckoutProductVariants";
+} from "../queries/gqlTypes/CheckoutProductVariants";
 
 export const createCheckoutProductVariantsResponse = (
   CmgtCheckoutProductVariants:
