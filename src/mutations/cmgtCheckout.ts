@@ -285,7 +285,7 @@ export const updatePaymentExceptCheckout = gql`
   mutation updatePaymentExceptCheckout($paymentIds: [Int!]!) {
     update_payment_payment(
       where: { id: { _in: $paymentIds } }
-      _set: { checkout_id: NULL }
+      _set: { checkout_id: null }
     ) {
       affected_rows
     }
@@ -298,6 +298,63 @@ export const insertOrderEvent = gql`
   ) {
     insert_order_orderevent(objects: $orderEventObject) {
       affected_rows
+    }
+  }
+`;
+
+export const selectUserAddress = gql`
+  query selectUserAddress($user_id: Int) {
+    account_user_connection(where: { id: { _eq: $user_id } }) {
+      edges {
+        node {
+          id
+          email
+          first_name
+          last_name
+          is_staff
+          accountAddressByDefaultShippingAddressId {
+            id
+            first_name
+            last_name
+            company_name
+            street_address_1
+            street_address_2
+            city
+            postal_code
+            country
+            country_area
+            phone
+          }
+          accountAddressByDefaultBillingAddressId {
+            id
+            first_name
+            last_name
+            company_name
+            street_address_1
+            street_address_2
+            city
+            postal_code
+            country
+            country_area
+            phone
+          }
+          account_user_addresses {
+            account_address {
+              id
+              first_name
+              last_name
+              company_name
+              street_address_1
+              street_address_2
+              city
+              postal_code
+              country
+              country_area
+              phone
+            }
+          }
+        }
+      }
     }
   }
 `;

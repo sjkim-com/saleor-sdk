@@ -632,6 +632,7 @@ class CheckoutJobs extends JobsHandler<{}> {
     paymentData,
     redirectUrl,
     storeSource,
+    userId,
   }: CompleteCheckoutJobInput): PromiseCheckoutJobRunResponse => {
     const checkout = LocalStorageHandler.getCheckout();
     const promoCode = checkout?.promoCodeDiscount?.voucherCode;
@@ -742,7 +743,8 @@ class CheckoutJobs extends JobsHandler<{}> {
         PaymentTranData!,
         DiscountVoucherData!,
         checkout!,
-        paymentData!
+        paymentData!,
+        userId!
       );
 
       if (orderError) {

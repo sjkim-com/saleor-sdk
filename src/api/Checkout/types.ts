@@ -86,6 +86,7 @@ export interface CompleteCheckoutInput {
   paymentData?: paymentValue;
   redirectUrl?: string;
   storeSource?: boolean;
+  userId?: number;
 }
 
 export interface paymentValue {

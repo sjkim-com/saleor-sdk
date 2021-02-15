@@ -2,6 +2,10 @@ import { ApolloError } from "apollo-client";
 
 import { PasswordChange } from "../mutations/gqlTypes/PasswordChange";
 import { SetPassword } from "../mutations/gqlTypes/SetPassword";
+import {
+  CreateUserAddressCheck,
+  CreateUserAddress_accountAddressCreate,
+} from "../mutations/gqlTypes/CreateUserAddress";
 import { TokenAuth_tokenCreate } from "../mutations/gqlTypes/TokenAuth";
 import BaseDetails from "../helpers/BaseDetails";
 import BaseList, { BaseListVariables } from "../helpers/BaseList";
@@ -38,6 +42,16 @@ export type SetPasswordChange = {
 
 export type SetPasswordResult = {
   data: SetPassword | null;
+  error: ApolloError | null;
+} | null;
+
+export type CreateAddressResult = {
+  data: CreateUserAddressCheck | null;
+  error: ApolloError | null;
+} | null;
+
+export type SelectUserAddressResult = {
+  data: CreateUserAddress_accountAddressCreate | null;
   error: ApolloError | null;
 } | null;
 

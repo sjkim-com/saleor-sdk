@@ -1862,7 +1862,8 @@ export class ApolloClientManager {
     paymentTranId: number,
     discountId: number,
     checkout: ICheckoutModel,
-    paymentData: paymentValue
+    paymentData: paymentValue,
+    userId: number
   ) => {
     try {
       const orderToken = uuidv4();
@@ -1894,8 +1895,7 @@ export class ApolloClientManager {
             metadata: {},
             created: new Date(),
             status: "unfulfilled",
-            // TODO : login 시 userid 세팅
-            user_id: null,
+            user_id: userId === undefined || userId === null ? null : userId,
             language_code: "jp",
             tracking_client_id: trackingCode,
             billing_address_id: decoderOfRelayId(checkout.billingAddress?.id!),
@@ -2084,7 +2084,7 @@ export class ApolloClientManager {
       const { data, errors } = await this.client.mutate({
         mutation: CmgtCheckoutMutations.deleteCheckout,
         variables: {
-          checkoutId: checkoutToken,
+          token: checkoutToken,
         },
       });
 

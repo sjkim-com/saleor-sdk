@@ -10,6 +10,12 @@ import { UserOrderByToken } from "../queries/gqlTypes/UserOrderByToken";
 import { OrderByToken } from "../queries/gqlTypes/OrderByToken";
 import { PasswordChange } from "../mutations/gqlTypes/PasswordChange";
 import { SetPassword } from "../mutations/gqlTypes/SetPassword";
+import {
+  CreateUserAddress,
+  CreateUserAddressCheck,
+  SelectUserAddressCmgt,
+  CreateUserAddress_accountAddressCreate_user_addresses,
+} from "../mutations/gqlTypes/CreateUserAddress";
 import { getAuthToken } from "../auth";
 import { MUTATIONS } from "../mutations";
 import { QUERIES } from "../queries";
@@ -27,7 +33,12 @@ import {
   isDataEmpty,
   mergeEdges,
 } from "../utils";
-import { SetPasswordChange, SetPasswordResult } from "./types";
+import {
+  SetPasswordChange,
+  SetPasswordResult,
+  CreateAddressResult,
+  SelectUserAddressResult,
+} from "./types";
 import { WINDOW_EXISTS } from "../consts";
 
 const handleDataErrors = <T extends QueryShape, TData>(
@@ -116,6 +127,190 @@ class APIProxy {
     MUTATIONS.CreateUserAddress,
     data => data!.accountAddressCreate
   );
+
+  cmgtSetCreateUserAddress = async (
+    variables: InferOptions<MUTATIONS["cmgtCreateUserAddress"]>["variables"],
+    options?: Omit<
+      InferOptions<MUTATIONS["cmgtCreateUserAddress"]>,
+      "variables"
+    >
+  ): Promise<CreateAddressResult> => {
+    let result: {
+      data: CreateUserAddressCheck | null;
+    } | null = null;
+
+    result = await this.fireQuery(
+      MUTATIONS.cmgtCreateUserAddress,
+      data => data
+    )(variables, {
+      ...options,
+    });
+    const { data } = result;
+
+    return {
+      data,
+      error: null,
+    };
+  };
+
+  cmgtSetSelectUserAddress = async (
+    variables: InferOptions<MUTATIONS["cmgtSelectUserAddress"]>["variables"],
+    options?: Omit<
+      InferOptions<MUTATIONS["cmgtSelectUserAddress"]>,
+      "variables"
+    >
+  ): Promise<SelectUserAddressResult> => {
+    let result: {
+      data: SelectUserAddressCmgt | null;
+    } | null = null;
+
+    result = await this.fireQuery(
+      MUTATIONS.cmgtSelectUserAddress,
+      data => data!
+    )(variables, {
+      ...options,
+    });
+
+    const settingData = result!.data?.account_user_connection.edges[0].node;
+    const shippingAddressId =
+      settingData?.accountAddressByDefaultShippingAddressId !== null
+        ? settingData?.accountAddressByDefaultShippingAddressId.id
+        : null;
+    const billingAddressId =
+      settingData?.accountAddressByDefaultBillingAddressId !== null
+        ? settingData?.accountAddressByDefaultBillingAddressId.id
+        : null;
+
+    const userAddressList:
+      | (CreateUserAddress_accountAddressCreate_user_addresses | null)[]
+      | null = settingData!?.account_user_addresses.map(user => {
+      return {
+        id: user.account_address.id,
+        firstName: user.account_address.first_name,
+        lastName: user.account_address.last_name,
+        companyName: user.account_address.company_name,
+        streetAddress1: user.account_address.street_address_1,
+        streetAddress2: user.account_address.street_address_2,
+        city: user.account_address.city,
+        postalCode: user.account_address.postal_code,
+        country: {
+          code: user.account_address.country,
+          country: "Japan",
+          __typename: "CountryDisplay",
+        },
+        countryArea: user.account_address.country_area,
+        phone: user.account_address.phone,
+        isDefaultBillingAddress: billingAddressId === user.account_address.id,
+        isDefaultShippingAddress: shippingAddressId === user.account_address.id,
+        __typename: "Address",
+      };
+    });
+
+    const mappingData: CreateUserAddress = {
+      accountAddressCreate: {
+        __typename: "AccountAddressCreate",
+        errors: [],
+        user: {
+          __typename: "User",
+          id: settingData?.id,
+          email: settingData?.email,
+          firstName: settingData?.first_name,
+          lastName: settingData?.last_name,
+          isStaff: settingData?.is_staff,
+          defaultShippingAddress:
+            settingData?.accountAddressByDefaultShippingAddressId !== null
+              ? {
+                  id: settingData?.accountAddressByDefaultShippingAddressId.id,
+                  firstName:
+                    settingData?.accountAddressByDefaultShippingAddressId
+                      .first_name,
+                  lastName:
+                    settingData?.accountAddressByDefaultShippingAddressId
+                      .last_name,
+                  companyName:
+                    settingData?.accountAddressByDefaultShippingAddressId
+                      .company_name,
+                  streetAddress1:
+                    settingData?.accountAddressByDefaultShippingAddressId
+                      .street_address_1,
+                  streetAddress2:
+                    settingData?.accountAddressByDefaultShippingAddressId
+                      .street_address_2,
+                  city:
+                    settingData?.accountAddressByDefaultShippingAddressId.city,
+                  postalCode:
+                    settingData?.accountAddressByDefaultShippingAddressId
+                      .postal_code,
+                  country: {
+                    code:
+                      settingData?.accountAddressByDefaultShippingAddressId
+                        .country,
+                    country: "Japan",
+                    __typename: "CountryDisplay",
+                  },
+                  countryArea:
+                    settingData?.accountAddressByDefaultShippingAddressId
+                      .country_area,
+                  phone:
+                    settingData?.accountAddressByDefaultShippingAddressId.phone,
+                  isDefaultBillingAddress: null,
+                  isDefaultShippingAddress: null,
+                  __typename: "Address",
+                }
+              : null,
+          defaultBillingAddress:
+            settingData?.accountAddressByDefaultBillingAddressId !== null
+              ? {
+                  id: settingData?.accountAddressByDefaultBillingAddressId.id,
+                  firstName:
+                    settingData?.accountAddressByDefaultBillingAddressId
+                      .first_name,
+                  lastName:
+                    settingData?.accountAddressByDefaultBillingAddressId
+                      .last_name,
+                  companyName:
+                    settingData?.accountAddressByDefaultBillingAddressId
+                      .company_name,
+                  streetAddress1:
+                    settingData?.accountAddressByDefaultBillingAddressId
+                      .street_address_1,
+                  streetAddress2:
+                    settingData?.accountAddressByDefaultBillingAddressId
+                      .street_address_2,
+                  city:
+                    settingData?.accountAddressByDefaultBillingAddressId.city,
+                  postalCode:
+                    settingData?.accountAddressByDefaultBillingAddressId
+                      .postal_code,
+                  country: {
+                    code:
+                      settingData?.accountAddressByDefaultBillingAddressId
+                        .country,
+                    country: "Japan",
+                    __typename: "CountryDisplay",
+                  },
+                  countryArea:
+                    settingData?.accountAddressByDefaultBillingAddressId
+                      .country_area,
+                  phone:
+                    settingData?.accountAddressByDefaultBillingAddressId.phone,
+                  isDefaultBillingAddress: null,
+                  isDefaultShippingAddress: null,
+                  __typename: "Address",
+                }
+              : null,
+          addresses: userAddressList !== null ? userAddressList : null,
+          // __typename: "User"
+        },
+        // __typename: "AccountAddressCreate"
+      },
+    };
+
+    return {
+      data: mappingData.accountAddressCreate,
+      error: null,
+    };
+  };
 
   setUpdateuserAddress = this.fireQuery(
     MUTATIONS.UpdateUserAddress,
