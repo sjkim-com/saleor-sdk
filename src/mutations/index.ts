@@ -113,6 +113,7 @@ export const MUTATIONS = {
           street_address_2: options.variables?.addressObject.streetAddress2,
           postal_code: options.variables?.addressObject.postalCode,
           country_area: options.variables?.addressObject.countryArea,
+          phone: options.variables?.addressObject.phone,
           country: "JP",
           city: options.variables?.addressObject.city,
           city_area: "",
