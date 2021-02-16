@@ -34,6 +34,7 @@ export const createCheckoutRelay = gql`
           id
           checkout_id
           variant_id
+          saleproduct_id
         }
       }
     }

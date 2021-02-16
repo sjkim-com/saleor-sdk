@@ -1895,7 +1895,8 @@ export class ApolloClientManager {
 
       const orderLines = checkout.lines?.map(line => {
         return {
-          variant_id: decoderOfRelayId(line.variant.id),
+          // variant_id: decoderOfRelayId(line.variant.id),
+          saleproduct_id: line.variant.id,
           product_name: line.variant.product?.name,
           variant_name: line.variant.name,
           translated_product_name: "",

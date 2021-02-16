@@ -2,7 +2,8 @@ import { ICheckoutModel } from "../../helpers/LocalStorageHandler";
 
 export interface CombinationLinesType {
   quantity: number;
-  variant_id: number;
+  // variant_id: number;
+  saleproduct_id: string;
   data: {};
 }
 
@@ -32,6 +33,7 @@ export interface resultCheckoutlinesType {
   id: string;
   checkout_id: string;
   variant_id: number;
+  saleproduct_id: string;
 }
 
 export interface resultShippingMethodsType {

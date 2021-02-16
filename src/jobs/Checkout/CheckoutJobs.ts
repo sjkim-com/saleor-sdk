@@ -24,7 +24,6 @@ import {
   cardValue,
 } from "./typesRelay";
 import { JobsHandler } from "../JobsHandler";
-import { decoderOfRelayId } from "../../utils";
 
 export type PromiseCheckoutJobRunResponse = Promise<
   JobRunResponse<DataErrorCheckoutTypes, FunctionErrorCheckoutTypes>
@@ -133,7 +132,8 @@ class CheckoutJobs extends JobsHandler<{}> {
 
     const combinationLines = lines.map(line => ({
       quantity: line.quantity,
-      variant_id: decoderOfRelayId(line.variant.id),
+      // variant_id: decoderOfRelayId(line.variant.id),
+      saleproduct_id: line.variant.id,
       data: {},
     }));
 
