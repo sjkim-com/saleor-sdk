@@ -43,6 +43,7 @@ import { WINDOW_EXISTS } from "../consts";
 
 // CMGT用
 import { updateAccountUserVariantsResponse } from "../dataConverter/Account";
+import { ordersByUserVariantsResponse } from "../dataConverter/Order";
 
 const handleDataErrors = <T extends QueryShape, TData>(
   mapFn: MapFn<T, TData> | WatchMapFn<T, TData>,
@@ -79,6 +80,12 @@ class APIProxy {
 
   getOrdersByUser = this.watchQuery(QUERIES.OrdersByUser, data =>
     data.me ? data.me.orders : null
+  );
+
+  cmgtGetOrdersByUser = this.watchQuery(QUERIES.CmgtOrdersByUser, data =>
+    data.order_order_connection
+      ? ordersByUserVariantsResponse(data.order_order_connection)
+      : null
   );
 
   getOrderDetails = (

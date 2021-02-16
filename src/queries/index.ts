@@ -31,6 +31,12 @@ import {
   CollectionList,
 } from "./gqlTypes/CollectionList";
 
+import * as CmgtOrders from "./cmgtOrders";
+import {
+  CmgtOrdersByUserVariables,
+  CmgtOrdersByUser,
+} from "./gqlTypes/CmgtOrdersByUser";
+
 type QueryOptions<T = {}> = T extends { [n: string]: never }
   ? Omit<ApolloQueryOptions<{}>, "query">
   : RequireOnlyOne<Omit<ApolloQueryOptions<T>, "query">, "variables">;
@@ -91,6 +97,14 @@ export const QUERIES = {
   ): ObservableQuery<VariantsProducts, any> =>
     client.watchQuery({
       query: Product.variantsProducts,
+      ...options,
+    }),
+  CmgtOrdersByUser: <TCacheShape>(
+    client: ApolloClient<TCacheShape>,
+    options: QueryOptions<CmgtOrdersByUserVariables>
+  ): ObservableQuery<CmgtOrdersByUser, any> =>
+    client.watchQuery({
+      query: CmgtOrders.cmgtOrdersByUser,
       ...options,
     }),
 };
