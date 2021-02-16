@@ -113,6 +113,11 @@ import {
   paymentListWithCheckout,
 } from "./typesRelay";
 import { createCheckoutProductVariantsResponse } from "../../dataConverter/Cart";
+import {
+  updateAddressVariablesConvert,
+  setAddressDataCheckoutConvert,
+  updateCheckoutEmailVariablesConvert,
+} from "../../dataConverter/Checkout";
 
 export class ApolloClientManager {
   private client: ApolloClient<any>;
@@ -1055,6 +1060,132 @@ export class ApolloClientManager {
         };
       }
       return {};
+    } catch (error) {
+      return {
+        error,
+      };
+    }
+  };
+
+  cmgtUpdateShippingAddress = async (
+    shippingAddress: ICheckoutAddress,
+    checkout: ICheckoutModel
+  ) => {
+    try {
+      const shippingAddressCheck = !!(
+        checkout.shippingAddress?.id === null ||
+        checkout.shippingAddress?.id === undefined
+      );
+
+      if (shippingAddressCheck) {
+        return {
+          updateShippingError: "Shipping Address is Null.",
+        };
+      }
+      const variables = updateAddressVariablesConvert(
+        shippingAddress,
+        checkout.shippingAddress?.id!
+      );
+
+      const { data, errors } = await this.client.mutate({
+        mutation: CmgtCheckoutMutations.updateAddress,
+        variables,
+      });
+
+      if (errors?.length) {
+        return {
+          updateShippingError: errors,
+        };
+      }
+      if (data.update_account_address.affected_rows > 0) {
+        const result = setAddressDataCheckoutConvert(
+          variables.addressObject,
+          checkout,
+          "Shipping"
+        );
+        return {
+          updateShippingData: result,
+        };
+      }
+      return {};
+    } catch (error) {
+      return {
+        error,
+      };
+    }
+  };
+
+  cmgtUpdateBillingAddress = async (
+    billingAddress: ICheckoutAddress,
+    checkout: ICheckoutModel
+  ) => {
+    try {
+      const billingAddressCheck = !!(
+        checkout.billingAddress?.id === null ||
+        checkout.billingAddress?.id === undefined
+      );
+
+      if (billingAddressCheck) {
+        return {
+          updateBillingError: "Billing Address is Null.",
+        };
+      }
+
+      const variables = updateAddressVariablesConvert(
+        billingAddress,
+        checkout.billingAddress?.id!
+      );
+
+      const { data, errors } = await this.client.mutate({
+        mutation: CmgtCheckoutMutations.updateAddress,
+        variables,
+      });
+
+      if (errors?.length) {
+        return {
+          updateBillingError: errors,
+        };
+      }
+      if (data.update_account_address.affected_rows > 0) {
+        const result = setAddressDataCheckoutConvert(
+          variables.addressObject,
+          checkout,
+          "Billing"
+        );
+        return {
+          updateBillingData: result,
+        };
+      }
+      return {};
+    } catch (error) {
+      return {
+        error,
+      };
+    }
+  };
+
+  cmgtUpdateCheckoutEmail = async (email: string, checkout: ICheckoutModel) => {
+    try {
+      const variables = updateCheckoutEmailVariablesConvert(
+        checkout.token,
+        email
+      );
+      const { data, errors } = await this.client.mutate({
+        mutation: CmgtCheckoutMutations.updateCheckoutEmail,
+        variables,
+      });
+
+      if (errors?.length) {
+        return {
+          updateCheckoutError: errors,
+        };
+      }
+      if (data.update_checkout_checkout.affected_rows > 0) {
+        return {
+          updateCheckoutData: true,
+        };
+      }
+      return { updateCheckoutData: false };
     } catch (error) {
       return {
         error,

@@ -227,6 +227,65 @@ class CheckoutJobs extends JobsHandler<{}> {
     return { data };
   };
 
+  cmgtSetShippingAddress = async ({
+    checkoutId,
+    shippingAddress,
+    email,
+    selectedShippingAddressId,
+    channel,
+  }: SetShippingAddressJobInput): PromiseCheckoutJobRunResponse => {
+    const checkout = LocalStorageHandler.getCheckout();
+    const {
+      updateShippingData,
+      updateShippingError,
+    } = await this.apolloClientManager.cmgtUpdateShippingAddress(
+      shippingAddress,
+      checkout!
+    );
+
+    if (updateShippingError) {
+      return {
+        dataError: {
+          error: updateShippingError,
+          type: DataErrorCheckoutTypes.SET_SHIPPING_ADDRESS,
+        },
+      };
+    }
+
+    if (updateShippingData) {
+      const {
+        updateCheckoutData,
+        updateCheckoutError,
+      } = await this.apolloClientManager.cmgtUpdateCheckoutEmail(
+        email,
+        checkout!
+      );
+
+      if (updateCheckoutError) {
+        return {
+          dataError: {
+            error: updateCheckoutError,
+            type: DataErrorCheckoutTypes.SET_SHIPPING_ADDRESS,
+          },
+        };
+      }
+
+      if (updateCheckoutData) {
+        this.localStorageHandler.setCheckout({
+          ...checkout,
+          availableShippingMethods:
+            updateShippingData?.availableShippingMethods,
+          billingAsShipping: false,
+          email: updateShippingData?.email,
+          selectedShippingAddressId,
+          shippingAddress: updateShippingData?.shippingAddress,
+        });
+      }
+    }
+
+    return { data: updateShippingData };
+  };
+
   setBillingAddress = async ({
     checkoutId,
     billingAddress,
@@ -267,49 +326,85 @@ class CheckoutJobs extends JobsHandler<{}> {
     token,
   }: SetBillingAddressJobInput): PromiseCheckoutJobRunResponse => {
     const checkout = LocalStorageHandler.getCheckout();
-    const {
-      billingData,
-      billingError,
-    } = await this.apolloClientManager.cmgtSetBillingAddress(
-      billingAddress,
-      checkoutId
+    const billingCheck = !(
+      checkout?.billingAddress === null ||
+      checkout?.billingAddress === undefined
     );
 
-    if (billingError) {
-      return {
-        dataError: {
-          error: billingError,
-          type: DataErrorCheckoutTypes.SET_BILLING_ADDRESS,
-        },
-      };
+    if (billingCheck) {
+      const {
+        updateBillingData,
+        updateBillingError,
+      } = await this.apolloClientManager.cmgtUpdateBillingAddress(
+        billingAddress,
+        checkout!
+      );
+
+      if (updateBillingError) {
+        return {
+          dataError: {
+            error: updateBillingError,
+            type: DataErrorCheckoutTypes.SET_BILLING_ADDRESS,
+          },
+        };
+      }
+
+      if (updateBillingData) {
+        this.localStorageHandler.setCheckout({
+          ...checkout,
+          availablePaymentGateways: updateBillingData?.availablePaymentGateways,
+          billingAddress: updateBillingData?.billingAddress,
+          billingAsShipping: !!billingAsShipping,
+          selectedBillingAddressId,
+        });
+        return { data: updateBillingData };
+      }
+    } else {
+      const {
+        billingData,
+        billingError,
+      } = await this.apolloClientManager.cmgtSetBillingAddress(
+        billingAddress,
+        checkoutId
+      );
+
+      if (billingError) {
+        return {
+          dataError: {
+            error: billingError,
+            type: DataErrorCheckoutTypes.SET_BILLING_ADDRESS,
+          },
+        };
+      }
+
+      const {
+        checkoutBillingData,
+        checkoutBillingError,
+      } = await this.apolloClientManager.cmgtUpdateCheckoutBillingAddress(
+        billingData,
+        checkout!,
+        token!
+      );
+
+      if (checkoutBillingError) {
+        return {
+          dataError: {
+            error: checkoutBillingError,
+            type: DataErrorCheckoutTypes.SET_BILLING_ADDRESS,
+          },
+        };
+      }
+
+      this.localStorageHandler.setCheckout({
+        ...checkout,
+        availablePaymentGateways: checkoutBillingData?.availablePaymentGateways,
+        billingAddress: checkoutBillingData?.billingAddress,
+        billingAsShipping: !!billingAsShipping,
+        selectedBillingAddressId,
+      });
+      return { data: checkoutBillingData };
     }
-
-    const {
-      checkoutBillingData,
-      checkoutBillingError,
-    } = await this.apolloClientManager.cmgtUpdateCheckoutBillingAddress(
-      billingData,
-      checkout!,
-      token!
-    );
-
-    if (checkoutBillingError) {
-      return {
-        dataError: {
-          error: checkoutBillingError,
-          type: DataErrorCheckoutTypes.SET_BILLING_ADDRESS,
-        },
-      };
-    }
-
-    this.localStorageHandler.setCheckout({
-      ...checkout,
-      availablePaymentGateways: checkoutBillingData?.availablePaymentGateways,
-      billingAddress: checkoutBillingData?.billingAddress,
-      billingAsShipping: !!billingAsShipping,
-      selectedBillingAddressId,
-    });
-    return { data: checkoutBillingData };
+    return {};
   };
 
   setBillingAddressWithEmail = async ({

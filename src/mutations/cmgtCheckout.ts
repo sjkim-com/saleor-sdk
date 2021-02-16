@@ -359,3 +359,28 @@ export const selectUserAddress = gql`
     }
   }
 `;
+
+export const updateAddress = gql`
+  mutation updateAddress(
+    $addressId: Int
+    $addressObject: account_address_set_input
+  ) {
+    update_account_address(
+      where: { id: { _eq: $addressId } }
+      _set: $addressObject
+    ) {
+      affected_rows
+    }
+  }
+`;
+
+export const updateCheckoutEmail = gql`
+  mutation updateCheckoutEmail($token: uuid, $email: String) {
+    update_checkout_checkout(
+      where: { token: { _eq: $token } }
+      _set: { email: $email }
+    ) {
+      affected_rows
+    }
+  }
+`;

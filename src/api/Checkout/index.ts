@@ -191,7 +191,7 @@ export class SaleorCheckoutAPI extends ErrorListener {
     if (alteredLines && checkoutId) {
       const { data, dataError } = await this.jobsManager.run(
         "checkout",
-        "setShippingAddress",
+        "cmgtSetShippingAddress",
         {
           channel: this.config.channel,
           checkoutId,
