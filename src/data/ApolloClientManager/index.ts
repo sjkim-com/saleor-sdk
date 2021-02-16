@@ -587,6 +587,10 @@ export class ApolloClientManager {
               }
             : null;
 
+          let stock =
+            edge.node.quantityAvailable - (existingLine?.quantity || 0);
+          stock = stock > 0 ? stock : 0;
+
           return {
             id: existingLine?.id,
             quantity: existingLine?.quantity || 0,
@@ -597,7 +601,7 @@ export class ApolloClientManager {
               name: edge.node.name,
               pricing: edge.node.pricing,
               product: edge.node.product,
-              quantityAvailable: edge.node.quantityAvailable,
+              quantityAvailable: stock,
               sku: edge.node.sku,
             },
           };

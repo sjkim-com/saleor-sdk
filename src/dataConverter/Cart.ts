@@ -1,5 +1,7 @@
 /* eslint-disable prettier/prettier */
 
+import { sumBy } from "lodash";
+
 import {
   CmgtCheckoutProductVariants_pms_saleproduct_connection,
   CmgtCheckoutProductVariants_pms_saleproduct_connection_edges_node,
@@ -41,6 +43,12 @@ export const createCheckoutProductVariantsResponse = (
     const productUndiscountedPriceGross = saleProduct.pms_product?.sale_price;
     const productUndiscountedPriceNet = saleProduct.pms_product?.sale_price;
     const productImageUrl = "";
+
+    let stockQty =
+      sumBy(saleProduct.pms_warehousestocks, "stock_qty") -
+      sumBy(saleProduct.pms_warehousestocks, "safe_stock_qty");
+
+    stockQty = stockQty > 0 ? stockQty : 0;
 
     const pricing_priceUndiscounted_gross: CheckoutProductVariants_productVariants_edges_node_pricing_priceUndiscounted_gross = {
       __typename: "Money",
@@ -155,7 +163,7 @@ export const createCheckoutProductVariantsResponse = (
       name: saleProduct.name ? saleProduct.name : "",
       pricing: variantsPricing,
       product: variantsProduct,
-      quantityAvailable: 0,
+      quantityAvailable: stockQty,
       sku: saleProduct.saleproduct_id,
     };
 
