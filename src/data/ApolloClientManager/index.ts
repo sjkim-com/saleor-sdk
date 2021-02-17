@@ -2063,20 +2063,18 @@ export class ApolloClientManager {
             currency: paymentData.total.currency,
             shipping_method_id: decoderOfRelayId(checkout.shippingMethod?.id!),
             shipping_method_name: checkout.shippingMethod?.name,
-            shipping_price_net_amount: checkout.lines?.reduce(
-              (accumulator, currentValue) =>
-                accumulator + (currentValue.totalPrice?.net.amount || 0),
-              0
-            ),
-            shipping_price_gross_amount: checkout.lines?.reduce(
-              (accumulator, currentValue) =>
-                accumulator + (currentValue.totalPrice?.gross.amount || 0),
-              0
-            ),
+            shipping_price_net_amount: checkout.shippingMethod?.price?.amount,
+            shipping_price_gross_amount: checkout.shippingMethod?.price?.amount,
             token: orderToken,
             checkout_token: checkout.token,
-            total_net_amount: paymentData.total.amount,
-            total_gross_amount: paymentData.total.amount,
+            total_net_amount:
+              paymentData.total.amount +
+              checkout.shippingMethod?.price?.amount! -
+              checkout.promoCodeDiscount?.discount?.amount!,
+            total_gross_amount:
+              paymentData.total.amount +
+              checkout.shippingMethod?.price?.amount! -
+              checkout.promoCodeDiscount?.discount?.amount!,
             voucher_id: discountId,
             discount_amount: checkout.promoCodeDiscount?.discount?.amount,
             discount_name: checkout.promoCodeDiscount?.discountName,
@@ -2285,6 +2283,17 @@ export class ApolloClientManager {
         config: [
           {
             // __typename:"GatewayConfigLine",
+            field: "store_customer_card",
+            value: "false",
+          },
+        ],
+        currencies: ["JPY"],
+      },
+      {
+        id: "mirumee.payments.gmocredit",
+        name: "GMOCREDIT",
+        config: [
+          {
             field: "store_customer_card",
             value: "false",
           },
