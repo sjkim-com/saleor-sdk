@@ -36,6 +36,14 @@ import {
   CmgtOrdersByUserVariables,
   CmgtOrdersByUser,
 } from "./gqlTypes/CmgtOrdersByUser";
+import {
+  CmgtOrderByTokenVariables,
+  CmgtOrderByToken,
+} from "./gqlTypes/CmgtOrderByToken";
+import {
+  CmgtUserOrderByTokenVariables,
+  CmgtUserOrderByToken,
+} from "./gqlTypes/CmgtUserOrderByToken";
 
 type QueryOptions<T = {}> = T extends { [n: string]: never }
   ? Omit<ApolloQueryOptions<{}>, "query">
@@ -107,6 +115,23 @@ export const QUERIES = {
       query: CmgtOrders.cmgtOrdersByUser,
       ...options,
     }),
+  CmgtOrderDetails: <TCacheShape>(
+    client: ApolloClient<TCacheShape>,
+    options: QueryOptions<CmgtOrderByTokenVariables>
+  ): ObservableQuery<CmgtOrderByToken, any> =>
+    client.watchQuery({
+      query: CmgtOrders.cmgtOrderDetailsByTokenQuery,
+      ...options,
+    }),
+  CmgtOrderDetailsByUser: <TCacheShape>(
+    client: ApolloClient<TCacheShape>,
+    options: QueryOptions<CmgtUserOrderByTokenVariables>
+  ): ObservableQuery<CmgtUserOrderByToken, any> => {
+    return client.watchQuery({
+      query: CmgtOrders.cmgtUserOrderDetailsByTokenQuery,
+      ...options,
+    });
+  },
 };
 
 export type QUERIES = typeof QUERIES;

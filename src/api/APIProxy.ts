@@ -43,7 +43,11 @@ import { WINDOW_EXISTS } from "../consts";
 
 // CMGT用
 import { updateAccountUserVariantsResponse } from "../dataConverter/Account";
-import { ordersByUserVariantsResponse } from "../dataConverter/Order";
+import {
+  ordersByUserVariantsResponse,
+  userOrderDetailsByTokenVariantsResponse,
+  orderDetailsByTokenVariantsResponse,
+} from "../dataConverter/Order";
 
 const handleDataErrors = <T extends QueryShape, TData>(
   mapFn: MapFn<T, TData> | WatchMapFn<T, TData>,
@@ -114,6 +118,38 @@ class APIProxy {
       variables,
       options
     );
+  };
+
+  cmgtGetOrderDetails = (
+    variables: InferOptions<
+      QUERIES["CmgtOrderDetails"] | QUERIES["CmgtOrderDetailsByUser"]
+    >["variables"],
+    options: Omit<
+      InferOptions<
+        QUERIES["CmgtOrderDetails"] | QUERIES["CmgtOrderDetailsByUser"]
+      >,
+      "variables"
+    > & {
+      onUpdate: (
+        data:
+          | OrderByToken["orderByToken"]
+          | UserOrderByToken["orderByToken"]
+          | null
+      ) => void;
+    }
+  ) => {
+    if (this.isLoggedIn()) {
+      return this.watchQuery(QUERIES.CmgtOrderDetailsByUser, data =>
+        data.order_order_connection
+          ? userOrderDetailsByTokenVariantsResponse(data.order_order_connection)
+          : null
+      )(variables, options);
+    }
+    return this.watchQuery(QUERIES.CmgtOrderDetails, data =>
+      data.order_order_connection
+        ? orderDetailsByTokenVariantsResponse(data.order_order_connection)
+        : null
+    )(variables, options);
   };
 
   getVariantsProducts = this.watchQuery(

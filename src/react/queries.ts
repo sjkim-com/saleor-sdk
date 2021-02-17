@@ -14,3 +14,6 @@ export const useVariantsProducts = queryWithVariablesFactory(
 export const cmgtUseOrdersByUser = queryWithVariablesFactory(
   "cmgtGetOrdersByUser"
 );
+export const cmgtUseOrderDetails = queryWithVariablesFactory(
+  "cmgtGetOrderDetails"
+);

@@ -24,6 +24,18 @@ export interface CmgtOrdersByUser_order_order_connection_edges_node_order_orderl
    * 商品番号
    */
   product_id: string;
+  /**
+   * 販売価
+   */
+  sale_price: any | null;
+  /**
+   * 課稅分類コード
+   */
+  tax_type_cd: string | null;
+  /**
+   * 부가가치세율
+   */
+  vat_rate: any | null;
 }
 
 export interface CmgtOrdersByUser_order_order_connection_edges_node_order_orderlines_pms_saleproduct {
