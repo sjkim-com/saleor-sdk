@@ -111,6 +111,7 @@ import {
   paymentValue,
   cardValue,
   paymentListWithCheckout,
+  orderValue,
 } from "./typesRelay";
 import { createCheckoutProductVariantsResponse } from "../../dataConverter/Cart";
 import {
@@ -2097,7 +2098,7 @@ export class ApolloClientManager {
       }
       if (data.insert_order_order.affected_rows > 0) {
         return {
-          orderData: decoderOfRelayId(data.insert_order_order.returning[0].id),
+          orderData: data.insert_order_order.returning[0],
         };
       }
       return {};
@@ -2108,12 +2109,53 @@ export class ApolloClientManager {
     }
   };
 
-  cmgtUpdatePaymentOrderId = async (orderId: number, checkoutToken: string) => {
+  cmgtSelectLastOrderNo = async () => {
+    let lastOrderInfo: number;
+
+    try {
+      const lastOrder = this.client.watchQuery({
+        query: CmgtCheckoutQueries.cmgtSelectLastOrderNo,
+      });
+
+      lastOrderInfo = await new Promise((resolve, reject) => {
+        lastOrder.subscribe(
+          result => {
+            const { data, errors } = result;
+
+            if (
+              errors === null || errors === undefined
+                ? undefined
+                : errors.length
+            ) {
+              reject(errors);
+            } else {
+              resolve(
+                decoderOfRelayId(data.order_order_connection.edges[0].node.id)
+              );
+            }
+          },
+          error => {
+            reject(error);
+          }
+        );
+      });
+    } catch (error) {
+      return {
+        error,
+      };
+    }
+    return { data: lastOrderInfo };
+  };
+
+  cmgtUpdatePaymentOrderId = async (
+    orderData: orderValue,
+    checkoutToken: string
+  ) => {
     try {
       const { data, errors } = await this.client.mutate({
         mutation: CmgtCheckoutMutations.updatePaymentOrderId,
         variables: {
-          orderId,
+          orderId: decoderOfRelayId(orderData.id),
           checkoutId: checkoutToken,
         },
       });

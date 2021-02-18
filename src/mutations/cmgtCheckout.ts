@@ -227,6 +227,7 @@ export const insertOrder = gql`
       affected_rows
       returning {
         id
+        token
       }
     }
   }

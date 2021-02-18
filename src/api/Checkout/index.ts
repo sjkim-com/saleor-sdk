@@ -785,4 +785,29 @@ export class SaleorCheckoutAPI extends ErrorListener {
       pending: false,
     };
   };
+
+  cmgtSelectLastOrderNo = async (): CheckoutResponse => {
+    const checkoutId = this.saleorState.checkout?.id;
+
+    if (checkoutId) {
+      const { data, dataError } = await this.jobsManager.run(
+        "checkout",
+        "cmgtSelectLastOrderNo",
+        undefined
+      );
+
+      return {
+        data,
+        dataError,
+        pending: false,
+      };
+    }
+    return {
+      functionError: {
+        error: new Error("You need to set order no before payment."),
+        type: FunctionErrorCheckoutTypes.ORDER_NO_NOT_SET,
+      },
+      pending: false,
+    };
+  };
 }

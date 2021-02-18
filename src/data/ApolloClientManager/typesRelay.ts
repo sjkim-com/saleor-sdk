@@ -128,6 +128,11 @@ export interface paymentValue {
   total: totalValue;
 }
 
+export interface orderValue {
+  id: string;
+  token: string;
+}
+
 export interface totalValue {
   amount: number;
   currency: string;

@@ -176,3 +176,15 @@ export const cmgtCheckoutProductVariants = gql`
     }
   }
 `;
+
+export const cmgtSelectLastOrderNo = gql`
+  query SelectLastOrderNo {
+    order_order_connection(order_by: { id: asc_nulls_last }, last: 1) {
+      edges {
+        node {
+          id
+        }
+      }
+    }
+  }
+`;

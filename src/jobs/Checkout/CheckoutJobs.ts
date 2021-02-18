@@ -24,6 +24,7 @@ import {
   cardValue,
 } from "./typesRelay";
 import { JobsHandler } from "../JobsHandler";
+import { decoderOfRelayId } from "../../utils";
 
 export type PromiseCheckoutJobRunResponse = Promise<
   JobRunResponse<DataErrorCheckoutTypes, FunctionErrorCheckoutTypes>
@@ -630,7 +631,7 @@ class CheckoutJobs extends JobsHandler<{}> {
 
     this.localStorageHandler.setPayment({
       ...payment,
-      creditCard,
+      // creditCard,
       gateway: data?.gateway,
       id: data?.id,
       token: data?.token,
@@ -681,7 +682,7 @@ class CheckoutJobs extends JobsHandler<{}> {
 
     this.localStorageHandler.setPayment({
       ...payment,
-      creditCard,
+      // creditCard,
       gateway: data?.gateway,
       id: data?.id,
       token: data?.token,
@@ -918,14 +919,39 @@ class CheckoutJobs extends JobsHandler<{}> {
           },
         };
       }
+      if (!confirmationNeeded) {
+        this.localStorageHandler.setCheckout({});
+        this.localStorageHandler.setPayment({});
+      }
+      return {
+        data: {
+          order: {
+            id: orderData.id,
+            number: decoderOfRelayId(orderData.id),
+            token: orderData.token,
+          },
+        },
+      };
     }
-
-    if (!confirmationNeeded) {
-      this.localStorageHandler.setCheckout({});
-      this.localStorageHandler.setPayment({});
-    }
-
     return {};
+  };
+
+  cmgtSelectLastOrderNo = async (): PromiseCheckoutJobRunResponse => {
+    const {
+      data,
+      error,
+    } = await this.apolloClientManager.cmgtSelectLastOrderNo();
+
+    if (error) {
+      return {
+        dataError: {
+          error,
+          type: DataErrorCheckoutTypes.SELECT_ORDER_NO,
+        },
+      };
+    }
+
+    return { data };
   };
 }
 

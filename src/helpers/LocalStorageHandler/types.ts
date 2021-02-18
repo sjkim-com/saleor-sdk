@@ -105,6 +105,14 @@ export interface IPaymentCreditCard {
   expYear?: number | null;
 }
 
+export interface IPaymentCreditCardCmgt {
+  cardNo: number | null;
+
+  expire: number | null;
+
+  securityCode: number | null;
+}
+
 export interface ICheckoutModel {
   id?: string;
   token?: any;

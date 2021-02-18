@@ -4,6 +4,7 @@ import {
   ICheckoutModelPrice,
   ICheckoutModelPriceValue,
   IPaymentCreditCard,
+  IPaymentCreditCardCmgt,
 } from "../../helpers/LocalStorageHandler";
 
 export type IPrice = ICheckoutModelPrice | null | undefined;
@@ -40,6 +41,7 @@ export interface IPromoCodeDiscount {
 }
 
 export type ICreditCard = IPaymentCreditCard;
+export type ICreditCardCmgt = IPaymentCreditCardCmgt;
 
 export interface IPayment {
   id?: string;
@@ -60,6 +62,7 @@ export interface ICheckout {
 
 export enum FunctionErrorCheckoutTypes {
   "SHIPPING_ADDRESS_NOT_SET",
+  "ORDER_NO_NOT_SET",
   "ITEMS_NOT_ADDED_TO_CART",
   "EMAIL_NOT_SET",
 }
@@ -70,6 +73,7 @@ export enum DataErrorCheckoutTypes {
   "ADD_PROMO_CODE",
   "REMOVE_PROMO_CODE",
   "CREATE_PAYMENT",
+  "SELECT_ORDER_NO",
   "COMPLETE_CHECKOUT",
   "GET_CHECKOUT",
   "GET_PAYMENT_GATEWAYS",
