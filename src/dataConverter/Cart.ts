@@ -42,7 +42,9 @@ export const createCheckoutProductVariantsResponse = (
     const productPriceNet = saleProduct.pms_product?.sale_price;
     const productUndiscountedPriceGross = saleProduct.pms_product?.sale_price;
     const productUndiscountedPriceNet = saleProduct.pms_product?.sale_price;
-    const productImageUrl = "";
+    const productImageUrl = saleProduct.pms_product?.pms_productimgs.filter(
+      img => img.sort_no === 1
+    )[0].img!;
 
     let stockQty =
       sumBy(saleProduct.pms_warehousestocks, "stock_qty") -

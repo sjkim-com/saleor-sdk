@@ -161,7 +161,7 @@ export const cmgtCheckoutProductVariants = gql`
             id
             name
             sale_price
-            pms_productimgs {
+            pms_productimgs(where: { saleproduct_id: { _in: $ids } }) {
               id
               img
               img_no
