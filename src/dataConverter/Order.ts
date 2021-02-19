@@ -154,7 +154,7 @@ export const ordersByUserVariantsResponse = (
         product: OrdersByUserMeOrdersEdgesNodeLinesVariantProduct,
       };
 
-      const imgUrl = line.pms_productimg?.img || "";
+      const imgUrl = line.pms_saleproduct?.pms_productimgs[0]?.img || "";
 
       const OrdersByUserMeOrdersEdgesNodeLinesThumbnail: OrdersByUser_me_orders_edges_node_lines_thumbnail = {
         __typename: "Image",
@@ -321,7 +321,7 @@ export const userOrderDetailsByTokenVariantsResponse = (
       }
     );
 
-    const imgUrl = line.pms_productimg?.img || "";
+    const imgUrl = line.pms_saleproduct?.pms_productimgs[0]?.img || "";
 
     const UserOrderByTokenOrderByTokenLinesVariantProductThumbnail: UserOrderByToken_orderByToken_lines_variant_product_thumbnail = {
       __typename: "Image",
@@ -712,7 +712,7 @@ export const orderDetailsByTokenVariantsResponse = (
       }
     );
 
-    const imgUrl = line.pms_productimg?.img || "";
+    const imgUrl = line.pms_saleproduct?.pms_productimgs[0]?.img || "";
 
     const orderByTokenOrderByTokenLinesVariantProductThumbnail: OrderByToken_orderByToken_lines_variant_product_thumbnail = {
       __typename: "Image",

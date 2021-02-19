@@ -37,10 +37,11 @@ export const cmgtOrdersByUser = gql`
                 tax_type_cd
                 vat_rate
               }
-            }
-            pms_productimg {
-              id
-              img
+              pms_productimgs(limit: 1, order_by: { sort_no: asc }) {
+                id
+                img
+                sort_no
+              }
             }
           }
         }
@@ -104,10 +105,11 @@ export const cmgtOrderDetailsByTokenQuery = gql`
                   }
                 }
               }
-            }
-            pms_productimg {
-              id
-              img
+              pms_productimgs(limit: 1, order_by: { sort_no: asc }) {
+                id
+                img
+                sort_no
+              }
             }
             unit_price_net_amount
             unit_price_gross_amount
@@ -179,10 +181,11 @@ export const cmgtUserOrderDetailsByTokenQuery = gql`
                   }
                 }
               }
-            }
-            pms_productimg {
-              id
-              img
+              pms_productimgs(limit: 1, order_by: { sort_no: asc }) {
+                id
+                img
+                sort_no
+              }
             }
             unit_price_net_amount
             unit_price_gross_amount
