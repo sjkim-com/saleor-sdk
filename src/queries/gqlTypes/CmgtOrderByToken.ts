@@ -82,6 +82,19 @@ export interface CmgtOrderByToken_order_order_connection_edges_node_order_orderl
   pms_productoptionvalue: CmgtOrderByToken_order_order_connection_edges_node_order_orderlines_pms_saleproduct_pms_saleproductoptionvalues_pms_productoptionvalue | null;
 }
 
+export interface CmgtOrderByToken_order_order_connection_edges_node_order_orderlines_pms_saleproduct_pms_productimgs {
+  __typename: "pms_productimg";
+  id: string;
+  /**
+   * 画像||商品ID_画像番号
+   */
+  img: string | null;
+  /**
+   * ソート順
+   */
+  sort_no: any | null;
+}
+
 export interface CmgtOrderByToken_order_order_connection_edges_node_order_orderlines_pms_saleproduct {
   __typename: "pms_saleproduct";
   id: string;
@@ -105,15 +118,10 @@ export interface CmgtOrderByToken_order_order_connection_edges_node_order_orderl
    * An array relationship
    */
   pms_saleproductoptionvalues: CmgtOrderByToken_order_order_connection_edges_node_order_orderlines_pms_saleproduct_pms_saleproductoptionvalues[];
-}
-
-export interface CmgtOrderByToken_order_order_connection_edges_node_order_orderlines_pms_productimg {
-  __typename: "pms_productimg";
-  id: string;
   /**
-   * 画像||商品ID_画像番号
+   * An array relationship
    */
-  img: string | null;
+  pms_productimgs: CmgtOrderByToken_order_order_connection_edges_node_order_orderlines_pms_saleproduct_pms_productimgs[];
 }
 
 export interface CmgtOrderByToken_order_order_connection_edges_node_order_orderlines {
@@ -125,10 +133,6 @@ export interface CmgtOrderByToken_order_order_connection_edges_node_order_orderl
    * An object relationship
    */
   pms_saleproduct: CmgtOrderByToken_order_order_connection_edges_node_order_orderlines_pms_saleproduct | null;
-  /**
-   * An object relationship
-   */
-  pms_productimg: CmgtOrderByToken_order_order_connection_edges_node_order_orderlines_pms_productimg | null;
   unit_price_net_amount: any;
   unit_price_gross_amount: any;
   currency: string;

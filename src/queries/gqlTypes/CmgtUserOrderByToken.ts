@@ -82,6 +82,19 @@ export interface CmgtUserOrderByToken_order_order_connection_edges_node_order_or
   pms_productoptionvalue: CmgtUserOrderByToken_order_order_connection_edges_node_order_orderlines_pms_saleproduct_pms_saleproductoptionvalues_pms_productoptionvalue | null;
 }
 
+export interface CmgtUserOrderByToken_order_order_connection_edges_node_order_orderlines_pms_saleproduct_pms_productimgs {
+  __typename: "pms_productimg";
+  id: string;
+  /**
+   * 画像||商品ID_画像番号
+   */
+  img: string | null;
+  /**
+   * ソート順
+   */
+  sort_no: any | null;
+}
+
 export interface CmgtUserOrderByToken_order_order_connection_edges_node_order_orderlines_pms_saleproduct {
   __typename: "pms_saleproduct";
   id: string;
@@ -105,15 +118,10 @@ export interface CmgtUserOrderByToken_order_order_connection_edges_node_order_or
    * An array relationship
    */
   pms_saleproductoptionvalues: CmgtUserOrderByToken_order_order_connection_edges_node_order_orderlines_pms_saleproduct_pms_saleproductoptionvalues[];
-}
-
-export interface CmgtUserOrderByToken_order_order_connection_edges_node_order_orderlines_pms_productimg {
-  __typename: "pms_productimg";
-  id: string;
   /**
-   * 画像||商品ID_画像番号
+   * An array relationship
    */
-  img: string | null;
+  pms_productimgs: CmgtUserOrderByToken_order_order_connection_edges_node_order_orderlines_pms_saleproduct_pms_productimgs[];
 }
 
 export interface CmgtUserOrderByToken_order_order_connection_edges_node_order_orderlines {
@@ -125,10 +133,6 @@ export interface CmgtUserOrderByToken_order_order_connection_edges_node_order_or
    * An object relationship
    */
   pms_saleproduct: CmgtUserOrderByToken_order_order_connection_edges_node_order_orderlines_pms_saleproduct | null;
-  /**
-   * An object relationship
-   */
-  pms_productimg: CmgtUserOrderByToken_order_order_connection_edges_node_order_orderlines_pms_productimg | null;
   unit_price_net_amount: any;
   unit_price_gross_amount: any;
   currency: string;
