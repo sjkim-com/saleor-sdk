@@ -2115,6 +2115,7 @@ export class ApolloClientManager {
     try {
       const lastOrder = this.client.watchQuery({
         query: CmgtCheckoutQueries.cmgtSelectLastOrderNo,
+        fetchPolicy: "network-only",
       });
 
       lastOrderInfo = await new Promise((resolve, reject) => {

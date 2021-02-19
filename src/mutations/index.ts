@@ -30,6 +30,10 @@ import {
   UpdateUserAddress,
   UpdateUserAddressVariables,
 } from "./gqlTypes/UpdateUserAddress";
+import {
+  UpdateUserAddressCmgt,
+  updateUserAddressCmgtVariables,
+} from "./gqlTypes/CmgtUpdateUserAddress";
 
 import { SetPassword, SetPasswordVariables } from "./gqlTypes/SetPassword";
 
@@ -107,7 +111,7 @@ export const MUTATIONS = {
       variables: {
         addressObject: {
           first_name: options.variables?.addressObject.firstName,
-          last_name: options.variables?.addressObject.firstName,
+          last_name: options.variables?.addressObject.lastName,
           company_name: options.variables?.addressObject.companyName,
           street_address_1: options.variables?.addressObject.streetAddress1,
           street_address_2: options.variables?.addressObject.streetAddress2,
@@ -117,6 +121,13 @@ export const MUTATIONS = {
           country: "JP",
           city: options.variables?.addressObject.city,
           city_area: "",
+          account_user_addresses: {
+            data: {
+              user_id:
+                options.variables?.addressObject.account_user_addresses?.data
+                  ?.user_id,
+            },
+          },
         },
       },
     }),
@@ -164,6 +175,32 @@ export const MUTATIONS = {
     client.mutate({
       mutation: Address.updateUserAddress,
       ...options,
+    }),
+  CmgtUpdateUserAddress: <TCacheShape>(
+    client: ApolloClient<TCacheShape>,
+    options: MutationOptions<
+      UpdateUserAddressCmgt,
+      updateUserAddressCmgtVariables
+    >
+  ) =>
+    client.mutate({
+      mutation: CmgtMutation.updateUserAddress,
+      variables: {
+        addressId: options.variables?.addressId,
+        addressObject: {
+          first_name: options.variables?.addressObject?.firstName,
+          last_name: options.variables?.addressObject?.lastName,
+          company_name: options.variables?.addressObject?.companyName,
+          street_address_1: options.variables?.addressObject?.streetAddress1,
+          street_address_2: options.variables?.addressObject?.streetAddress2,
+          postal_code: options.variables?.addressObject?.postalCode,
+          country_area: options.variables?.addressObject?.countryArea,
+          phone: options.variables?.addressObject?.phone,
+          country: "JP",
+          city: options.variables?.addressObject?.city,
+          city_area: "",
+        },
+      },
     }),
 };
 

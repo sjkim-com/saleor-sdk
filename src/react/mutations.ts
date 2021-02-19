@@ -11,6 +11,9 @@ export const cmgtSelectUserAddress = mutationFactory(
   "cmgtSetSelectUserAddress"
 );
 export const useUpdateUserAddress = mutationFactory("setUpdateuserAddress");
+export const cmgtUseUpdateUserAddress = mutationFactory(
+  "cmgtSetUpdateuserAddress"
+);
 
 // User mutations
 export const usePasswordChange = mutationFactory("setPasswordChange");

@@ -3,7 +3,7 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { AddressInput, AccountErrorCode } from "./../../gqlTypes/globalTypes";
+import { AddressInput, AccountErrorCode, CountryCode } from "./../../gqlTypes/globalTypes";
 
 // ====================================================
 // GraphQL mutation operation: CreateUserAddress
@@ -197,11 +197,34 @@ export interface CreateUserAddressVariables {
 }
 
 export interface CreateUserAddressVariablesCmgt {
-  addressObject: AddressInput;
+  addressObject: CreateUserAddressVariablesCmgt_AddressInput;
+}
+
+export interface CreateUserAddressVariablesCmgt_AddressInput {
+  firstName?: string | null;
+  lastName?: string | null;
+  companyName?: string | null;
+  streetAddress1?: string | null;
+  streetAddress2?: string | null;
+  city?: string | null;
+  cityArea?: string | null;
+  postalCode?: string | null;
+  country?: CountryCode | null;
+  countryArea?: string | null;
+  phone?: string | null;
+  account_user_addresses: AddressInput_account_user_addresses;
+}
+
+export interface AddressInput_account_user_addresses {
+  data: AddressInput_account_user_addresses_data;
+}
+
+export interface AddressInput_account_user_addresses_data {
+  user_id: number;
 }
 
 export interface SelectUserAddressVariablesCmgt {
-  userId: number;
+  user_Id: number;
 }
 
 export interface SelectUserAddressCmgt {

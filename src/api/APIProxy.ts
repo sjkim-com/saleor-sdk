@@ -157,6 +157,11 @@ class APIProxy {
     data => data.productVariants
   );
 
+  cmgtGetLastOrderNo = this.watchQuery(
+    QUERIES.CmgtGetLastOrderNo,
+    data => data.order_order_connection.edges[0].node.id
+  );
+
   getShopDetails = this.watchQuery(QUERIES.GetShopDetails, data => data);
 
   setUserDefaultAddress = this.fireQuery(
@@ -361,6 +366,11 @@ class APIProxy {
   setUpdateuserAddress = this.fireQuery(
     MUTATIONS.UpdateUserAddress,
     data => data!.accountAddressUpdate
+  );
+
+  cmgtSetUpdateuserAddress = this.fireQuery(
+    MUTATIONS.CmgtUpdateUserAddress,
+    data => data?.update_account_address.returning[0]
   );
 
   setAccountUpdate = this.fireQuery(
