@@ -157,11 +157,6 @@ class APIProxy {
     data => data.productVariants
   );
 
-  cmgtGetLastOrderNo = this.watchQuery(
-    QUERIES.CmgtGetLastOrderNo,
-    data => data.order_order_connection.edges[0].node.id
-  );
-
   getShopDetails = this.watchQuery(QUERIES.GetShopDetails, data => data);
 
   setUserDefaultAddress = this.fireQuery(
