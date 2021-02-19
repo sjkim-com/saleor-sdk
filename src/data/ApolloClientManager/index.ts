@@ -2064,8 +2064,12 @@ export class ApolloClientManager {
             currency: paymentData.total.currency,
             shipping_method_id: decoderOfRelayId(checkout.shippingMethod?.id!),
             shipping_method_name: checkout.shippingMethod?.name,
-            shipping_price_net_amount: checkout.shippingMethod?.price?.amount,
-            shipping_price_gross_amount: checkout.shippingMethod?.price?.amount,
+            shipping_price_net_amount:
+              checkout.shippingMethod?.price?.amount! -
+              checkout.promoCodeDiscount?.discount?.amount!,
+            shipping_price_gross_amount:
+              checkout.shippingMethod?.price?.amount! -
+              checkout.promoCodeDiscount?.discount?.amount!,
             token: orderToken,
             checkout_token: checkout.token,
             total_net_amount:

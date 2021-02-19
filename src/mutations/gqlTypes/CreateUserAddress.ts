@@ -224,7 +224,7 @@ export interface AddressInput_account_user_addresses_data {
 }
 
 export interface SelectUserAddressVariablesCmgt {
-  user_Id: number;
+  user_id: number;
 }
 
 export interface SelectUserAddressCmgt {

@@ -76,8 +76,11 @@ const handleDataErrors = <T extends QueryShape, TData>(
 class APIProxy {
   client: ApolloClient<any>;
 
-  constructor(client: ApolloClient<any>) {
+  client2: ApolloClient<any>;
+
+  constructor(client: ApolloClient<any>, client2: ApolloClient<any>) {
     this.client = client;
+    this.client2 = client2;
   }
 
   getAttributes = this.watchQuery(QUERIES.Attributes, data => data.attributes);
@@ -159,17 +162,17 @@ class APIProxy {
 
   getShopDetails = this.watchQuery(QUERIES.GetShopDetails, data => data);
 
-  setUserDefaultAddress = this.fireQuery(
+  setUserDefaultAddress = this.fireQuery2(
     MUTATIONS.AddressTypeUpdate,
     data => data!.accountSetDefaultAddress
   );
 
-  setDeleteUserAddress = this.fireQuery(
+  setDeleteUserAddress = this.fireQuery2(
     MUTATIONS.DeleteUserAddress,
     data => data!.accountAddressDelete
   );
 
-  setCreateUserAddress = this.fireQuery(
+  setCreateUserAddress = this.fireQuery2(
     MUTATIONS.CreateUserAddress,
     data => data!.accountAddressCreate
   );
@@ -358,7 +361,7 @@ class APIProxy {
     };
   };
 
-  setUpdateuserAddress = this.fireQuery(
+  setUpdateuserAddress = this.fireQuery2(
     MUTATIONS.UpdateUserAddress,
     data => data!.accountAddressUpdate
   );
@@ -576,6 +579,158 @@ class APIProxy {
         unsubscribe: subscription.unsubscribe.bind(subscription),
       };
     };
+  }
+
+  watchQuery2<T extends QueryShape, TResult>(
+    query: T,
+    mapFn: WatchMapFn<T, TResult>
+  ) {
+    return <
+      TVariables extends InferOptions<T>["variables"],
+      TOptions extends Omit<
+        InferOptions<T> | WatchQueryOptions<InferOptions<T>>,
+        "variables"
+      >
+    >(
+      variables: TVariables,
+      options: TOptions & {
+        skip?: boolean;
+        onComplete?: () => void;
+        onError?: (error: ApolloError) => void;
+        onUpdate: (
+          data: ReturnType<typeof mapFn> | null,
+          loading?: boolean
+        ) => void;
+      }
+    ) => {
+      const { onComplete, onError, onUpdate, ...apolloClientOptions } = options;
+
+      const observable: ObservableQuery<WatchQueryData<T>, TVariables> = query(
+        this.client2,
+        {
+          ...apolloClientOptions,
+          variables,
+        }
+      );
+
+      if (options.skip) {
+        return {
+          refetch: () => {
+            return new Promise(resolve => {
+              resolve({ data: null });
+            });
+          },
+          unsubscribe: null,
+        };
+      }
+
+      const subscription = observable.subscribe(
+        result => {
+          const { data, errors: apolloErrors, loading } = result;
+          const errorHandledData = handleDataErrors(
+            mapFn,
+            data as any,
+            apolloErrors
+          );
+          if (onUpdate) {
+            if (errorHandledData.errors) {
+              if (onError) {
+                onError(errorHandledData.errors);
+              }
+            } else {
+              onUpdate(errorHandledData.data as TResult, loading);
+              if (onComplete) {
+                onComplete();
+              }
+            }
+          }
+        },
+        error => {
+          if (onError) {
+            onError(error);
+          }
+        }
+      );
+
+      return {
+        loadMore: (
+          extraVariables: RequireAtLeastOne<TVariables>,
+          mergeResults: boolean = true
+        ) => {
+          observable.fetchMore({
+            updateQuery: (previousResult, { fetchMoreResult }) => {
+              if (!fetchMoreResult) {
+                // returning previousResult doesn't trigger observable `next`
+                onUpdate(mapFn(previousResult));
+                return previousResult;
+              }
+
+              if (mergeResults) {
+                const prevResultRef = mapFn(previousResult) as any;
+                const newResultRef = mapFn(fetchMoreResult) as any;
+
+                if (!prevResultRef || !newResultRef) {
+                  onUpdate(prevResultRef);
+                  return previousResult;
+                }
+
+                const mergedEdges = mergeEdges(
+                  prevResultRef.edges,
+                  newResultRef.edges
+                );
+
+                // use new result for metadata and mutate existing data
+                Object.keys(prevResultRef).forEach(key => {
+                  prevResultRef[key] = newResultRef[key];
+                });
+                prevResultRef.edges = mergedEdges;
+
+                return previousResult;
+              }
+
+              return fetchMoreResult;
+            },
+            variables: { ...variables, ...extraVariables },
+          });
+        },
+        refetch: (newVariables?: TVariables) => {
+          if (newVariables) {
+            observable.setVariables(newVariables);
+            const cachedResult = observable.currentResult();
+            const errorHandledData = handleDataErrors(mapFn, cachedResult.data);
+            if (errorHandledData.data) {
+              onUpdate(errorHandledData.data as TResult);
+            }
+          }
+
+          return APIProxy.firePromise(
+            () => observable.refetch(newVariables),
+            mapFn
+          );
+        },
+        setOptions: (newOptions: TOptions) =>
+          APIProxy.firePromise(() => observable.setOptions(newOptions), mapFn),
+        unsubscribe: subscription.unsubscribe.bind(subscription),
+      };
+    };
+  }
+
+  fireQuery2<T extends QueryShape, TResult>(
+    query: T,
+    mapFn: MapFn<T, TResult>
+  ) {
+    return (
+      variables: InferOptions<T>["variables"],
+      options?: Omit<InferOptions<T>, "variables">
+    ) =>
+      APIProxy.firePromise(
+        () =>
+          query(this.client2, {
+            ...options,
+            variables,
+          }),
+        mapFn
+      );
   }
 
   fireQuery<T extends QueryShape, TResult>(query: T, mapFn: MapFn<T, TResult>) {

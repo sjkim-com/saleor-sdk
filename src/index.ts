@@ -129,7 +129,7 @@ export class SaleorManager {
     const apolloClient2 =
       client2 || createSaleorClient(saleorCache2, saleorLinks2, options);
 
-    const apiProxy = new APIProxy(apolloClient);
+    const apiProxy = new APIProxy(apolloClient, apolloClient2);
     const api = new SaleorAPI(
       apolloClient,
       apolloClient2,
