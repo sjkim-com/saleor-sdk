@@ -833,6 +833,7 @@ export class ApolloClientManager {
       //     currency: lines.currency
       // };
 
+      // TODO: Setting variables
       // SELETE SippingMethod
       const shippingMethodList = this.client.watchQuery<
         resultShippingShippingZoneType,
@@ -841,7 +842,7 @@ export class ApolloClientManager {
         query: CmgtCheckoutQueries.shippingMethodByCountry,
         variables: {
           countryCode: "%JP%",
-          currency: "USD",
+          currency: "JPY",
           productAmt: 4.5,
           weight: 1000,
         },
