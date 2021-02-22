@@ -44,12 +44,12 @@ export const createCheckoutRelay = gql`
 export const updateBillingAddressHasura = gql`
   mutation updateBillingAddress(
     $token: uuid
-    $billingAddressId: Int
+    $id: Int
     $lastChange: timestamptz
   ) {
     update_checkout_checkout(
       where: { token: { _eq: $token } }
-      _set: { billing_address_id: $billingAddressId, last_change: $lastChange }
+      _set: { billing_address_id: $id, last_change: $lastChange }
     ) {
       affected_rows
       returning {
@@ -63,12 +63,12 @@ export const updateBillingAddressHasura = gql`
 export const updateCheckoutShippingMethodHasura = gql`
   mutation updateCheckoutShippingMethod(
     $token: uuid
-    $shippingMethodId: Int
+    $id: Int
     $lastChange: timestamptz
   ) {
     update_checkout_checkout(
       where: { token: { _eq: $token } }
-      _set: { last_change: $lastChange, shipping_method_id: $shippingMethodId }
+      _set: { last_change: $lastChange, shipping_method_id: $id }
     ) {
       affected_rows
       returning {
@@ -409,6 +409,14 @@ export const updateCheckoutEmail = gql`
       where: { token: { _eq: $token } }
       _set: { email: $email }
     ) {
+      affected_rows
+    }
+  }
+`;
+
+export const deleteUserAddress = gql`
+  mutation deleteUserAddress($addressId: Int) {
+    delete_account_address(where: { id: { _eq: $addressId } }) {
       affected_rows
     }
   }

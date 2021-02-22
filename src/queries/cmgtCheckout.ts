@@ -40,14 +40,8 @@ export const checkoutProductVariantsRelay = gql`
   }
 `;
 
-// TODO: ADD Or, And
 export const shippingMethodByCountry = gql`
-  query ShippingMethodListByCountry(
-    $productAmt: numeric
-    $countryCode: String
-    $weight: float8
-    $currency: String
-  ) {
+  query ShippingMethodListByCountry($countryCode: String) {
     shipping_shippingzone_connection(
       where: { countries: { _like: $countryCode } }
     ) {

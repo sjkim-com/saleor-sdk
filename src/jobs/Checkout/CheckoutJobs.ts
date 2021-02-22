@@ -160,7 +160,7 @@ class CheckoutJobs extends JobsHandler<{}> {
       shippingMethodData,
       shippingMethodError,
     } = await this.apolloClientManager.cmgtSelectShippingMethodList(
-      "JP",
+      shippingAddress?.country?.code!,
       lines
     );
 

@@ -118,6 +118,11 @@ import {
   updateAddressVariablesConvert,
   setAddressDataCheckoutConvert,
   updateCheckoutEmailVariablesConvert,
+  createCheckoutVariablesConvert,
+  createAddressVariablesConvert,
+  createCheckoutDataModelConvert,
+  setTargetCheckoutConvert,
+  addPromoCodeVariablesConvert,
 } from "../../dataConverter/Checkout";
 
 export class ApolloClientManager {
@@ -726,33 +731,12 @@ export class ApolloClientManager {
     shippingAddress?: ICheckoutAddress,
     combinationLines?: CombinationLinesType[]
   ) => {
-    const checkoutToken = uuidv4();
-
     try {
-      const variables = {
-        checkoutObject: {
-          email,
-          metadata: {},
-          billing_address_id: null,
-          private_metadata: {},
-          quantity: 2,
-          country: shippingAddress?.country,
-          shipping_address_id: decoderOfRelayId(shippingAddress?.id!),
-          token: checkoutToken,
-          currency: "JPY",
-          note: "",
-          discount_amount: 0,
-          shipping_method_id: null,
-          discount_name: null,
-          redirect_url: null,
-          translated_discount_name: null,
-          checkout_checkoutlines: {
-            data: combinationLines,
-          },
-          voucher_code: null,
-          tracking_code: null,
-        },
-      };
+      const variables = createCheckoutVariablesConvert(
+        email,
+        shippingAddress,
+        combinationLines
+      );
 
       const { data, errors } = await this.client.mutate({
         mutation: CmgtCheckoutMutations.createCheckoutRelay,
@@ -779,21 +763,7 @@ export class ApolloClientManager {
 
   cmgtCreateAddress = async (shippingAddress?: ICheckoutAddress) => {
     try {
-      const variables = {
-        addressObject: {
-          company_name: shippingAddress?.companyName,
-          first_name: shippingAddress?.firstName,
-          last_name: shippingAddress?.lastName,
-          city: shippingAddress?.city,
-          street_address_1: shippingAddress?.streetAddress1,
-          country: "JP",
-          street_address_2: shippingAddress?.streetAddress2,
-          postal_code: shippingAddress?.postalCode,
-          city_area: "",
-          country_area: shippingAddress?.countryArea,
-          phone: shippingAddress?.phone,
-        },
-      };
+      const variables = createAddressVariablesConvert(shippingAddress);
 
       const { data, errors } = await this.client.mutate({
         mutation: CmgtCheckoutMutations.createAddressMutationRelay,
@@ -824,28 +794,15 @@ export class ApolloClientManager {
   ) => {
     let availableShippingMethod: resultShippingMethodsType | null;
 
-    try {
-      // Mapping
-      // const variables = {
-      //     productAmt: lines.amount,
-      //     countryCode: countryCode,
-      //     weight: lines.weight,
-      //     currency: lines.currency
-      // };
+    const country = "%".concat(countryCode).concat("%");
 
-      // TODO: Setting variables
-      // SELETE SippingMethod
+    try {
       const shippingMethodList = this.client.watchQuery<
         resultShippingShippingZoneType,
         any
       >({
         query: CmgtCheckoutQueries.shippingMethodByCountry,
-        variables: {
-          countryCode: "%JP%",
-          currency: "JPY",
-          productAmt: 4.5,
-          weight: 1000,
-        },
+        variables: { countryCode: country },
       });
 
       availableShippingMethod = await new Promise((resolve, reject) => {
@@ -864,11 +821,9 @@ export class ApolloClientManager {
                 availableShippingMethods: data.shipping_shippingzone_connection.edges[0].node.shipping_shippingmethods.map(
                   method => {
                     return {
-                      // __typename: "ShippingMethod",
                       id: method.id,
                       name: method.name,
                       price: {
-                        // __typename: "Money",
                         amount: method.price_amount,
                         currency: method.currency,
                       },
@@ -898,59 +853,13 @@ export class ApolloClientManager {
     resultCheckout?: resultCheckoutType,
     resultShippingMethod?: resultShippingMethodsType | null
   ) => {
-    const result: Checkout = {
-      // __typename: "Checkout",
-      billingAddress: null,
-      id: resultCheckout!?.id,
-      availableShippingMethods: resultShippingMethod!?.availableShippingMethods,
-      token: resultCheckout?.token,
+    const result = createCheckoutDataModelConvert(
       email,
-      shippingAddress: {
-        // __typename: "Address",
-        firstName: resultAddress!?.first_name,
-        companyName: resultAddress!?.company_name,
-        id: resultAddress!?.id,
-        lastName: resultAddress!?.last_name,
-        city: resultAddress!?.city,
-        streetAddress1: resultAddress!?.street_address_1,
-        country: {
-          // __typename: "CountryDisplay",
-          code: resultAddress!?.country,
-          country: "Japan",
-        },
-        streetAddress2: resultAddress!?.street_address_2,
-        countryArea: resultAddress!?.country_area,
-        postalCode: resultAddress!?.postal_code,
-        isDefaultBillingAddress: null,
-        isDefaultShippingAddress: null,
-        phone: resultAddress!?.phone,
-      },
-      shippingMethod: null,
-      discount: {
-        // __typename: "Money",
-        currency: "JPY",
-        amount: 0,
-      },
-      isShippingRequired: true,
-      lines: lines!,
-      shippingPrice: {
-        // __typename: "TaxedMoney",
-        gross: {
-          //  __typename: "Money",
-          amount: 0,
-          currency: "JPY",
-        },
-        net: {
-          //  __typename: "Money",
-          amount: 0,
-          currency: "JPY",
-        },
-      },
-      discountName: null,
-      translatedDiscountName: null,
-      availablePaymentGateways: [],
-      voucherCode: null,
-    };
+      lines,
+      resultAddress,
+      resultCheckout,
+      resultShippingMethod
+    );
     return {
       resultData: this.constructCheckoutModel(result),
     };
@@ -1256,31 +1165,8 @@ export class ApolloClientManager {
     checkoutId: string
   ) => {
     try {
-      const variables = {
-        addressObject: {
-          city_area: "",
-          city: billingAddress.city,
-          company_name: billingAddress.companyName,
-          country:
-            CountryCode[
-              billingAddress?.country?.code as keyof typeof CountryCode
-            ] === undefined ||
-            CountryCode[
-              billingAddress?.country?.code as keyof typeof CountryCode
-            ] === null
-              ? "JP"
-              : CountryCode[
-                  billingAddress?.country?.code as keyof typeof CountryCode
-                ],
-          country_area: billingAddress.countryArea,
-          first_name: billingAddress.firstName,
-          last_name: billingAddress.lastName,
-          phone: billingAddress.phone,
-          postal_code: billingAddress.postalCode,
-          street_address_1: billingAddress.streetAddress1,
-          street_address_2: billingAddress.streetAddress2,
-        },
-      };
+      const variables = createAddressVariablesConvert(billingAddress);
+
       const { data, errors } = await this.client.mutate({
         mutation: CmgtCheckoutMutations.createAddressMutationRelay,
         variables,
@@ -1310,11 +1196,11 @@ export class ApolloClientManager {
     token: string
   ) => {
     try {
-      const variables = {
+      const variables = setTargetCheckoutConvert(
         token,
-        billingAddressId: decoderOfRelayId(billingAddress.id!),
-        lastChange: new Date(),
-      };
+        decoderOfRelayId(billingAddress.id!),
+        new Date()
+      );
 
       const { data, errors } = await this.client.mutate({
         mutation: CmgtCheckoutMutations.updateBillingAddressHasura,
@@ -1466,13 +1352,14 @@ export class ApolloClientManager {
   ) => {
     const methodId = decoderOfRelayId(selectShippingMethod.id);
     try {
+      const variables = setTargetCheckoutConvert(
+        checkoutToken,
+        methodId,
+        new Date()
+      );
       const { data, errors } = await this.client.mutate({
         mutation: CmgtCheckoutMutations.updateCheckoutShippingMethodHasura,
-        variables: {
-          token: checkoutToken,
-          shippingMethodId: methodId,
-          lastChange: new Date(),
-        },
+        variables,
       });
 
       if (errors?.length) {
@@ -1565,25 +1452,11 @@ export class ApolloClientManager {
     checkout: ICheckoutModel
   ) => {
     try {
-      let discountAmt = 0;
-
-      if (promoCode.discount_value_type === "percentage") {
-        discountAmt =
-          (checkout.shippingMethod?.price!?.amount * promoCode.discount_value) /
-          100;
-      }
+      const variables = addPromoCodeVariablesConvert(promoCode, checkout);
 
       const { data, errors } = await this.client.mutate({
         mutation: CmgtCheckoutMutations.updateCheckoutDiscount,
-        variables: {
-          token: checkout.token,
-          lastChange: new Date(),
-          currency: promoCode.currency,
-          discountAmt,
-          discountName: promoCode.name,
-          voucherCode: promoCode.code,
-          translatedDiscountName: "",
-        },
+        variables,
       });
 
       if (errors?.length) {
@@ -1877,6 +1750,10 @@ export class ApolloClientManager {
 
   cmgtUpdateDiscountVoucherUsed = async (promoCode: string) => {
     try {
+      if (promoCode === null) {
+        return { DiscountVoucherData: null };
+      }
+
       const { data, errors } = await this.client.mutate({
         mutation: CmgtCheckoutMutations.updateDiscountVoucherUsed,
         variables: {
@@ -2073,14 +1950,8 @@ export class ApolloClientManager {
               checkout.promoCodeDiscount?.discount?.amount!,
             token: orderToken,
             checkout_token: checkout.token,
-            total_net_amount:
-              paymentData.total.amount +
-              checkout.shippingMethod?.price?.amount! -
-              checkout.promoCodeDiscount?.discount?.amount!,
-            total_gross_amount:
-              paymentData.total.amount +
-              checkout.shippingMethod?.price?.amount! -
-              checkout.promoCodeDiscount?.discount?.amount!,
+            total_net_amount: paymentData.total.amount,
+            total_gross_amount: paymentData.total.amount,
             voucher_id: discountId,
             discount_amount: checkout.promoCodeDiscount?.discount?.amount,
             discount_name: checkout.promoCodeDiscount?.discountName,
