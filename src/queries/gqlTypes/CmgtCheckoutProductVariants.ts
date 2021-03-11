@@ -79,6 +79,10 @@ export interface CmgtCheckoutProductVariants_pms_saleproduct_connection_edges_no
    */
   name: string | null;
   /**
+   * 商品番号
+   */
+  product_id: string;
+  /**
    * 販売価
    */
   sale_price: any | null;

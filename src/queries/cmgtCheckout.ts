@@ -154,6 +154,7 @@ export const cmgtCheckoutProductVariants = gql`
           pms_product {
             id
             name
+            product_id
             sale_price
             pms_productimgs(where: { saleproduct_id: { _in: $ids } }) {
               id

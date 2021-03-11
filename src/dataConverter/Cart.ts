@@ -114,7 +114,9 @@ export const createCheckoutProductVariantsResponse = (
 
     const variantsProduct: CheckoutProductVariants_productVariants_edges_node_product = {
       __typename: "Product",
-      id: saleProduct.pms_product?.id ? saleProduct.pms_product?.id : "",
+      id: saleProduct.pms_product?.product_id
+        ? saleProduct.pms_product?.product_id
+        : "",
       name: saleProduct.pms_product?.name ? saleProduct.pms_product?.name : "",
       productType: product_productType,
       thumbnail: product_thumbnail,
